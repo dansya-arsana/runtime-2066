@@ -63,6 +63,23 @@ def _open_regular(resolved: str, node_id: str, op: str, flags: int):
     return fd
 
 
+def _read_bounded(fd: int, cap: int | None) -> bytes:
+    """Chunked read from an open handle: never pre-allocates by the
+    requested count (os.read(huge) MemoryErrors on Linux), stops at EOF
+    or at `cap` bytes."""
+    chunks: list[bytes] = []
+    remaining = cap
+    while remaining is None or remaining > 0:
+        want = 65536 if remaining is None else min(65536, remaining)
+        chunk = os.read(fd, want)
+        if not chunk:
+            break
+        chunks.append(chunk)
+        if remaining is not None:
+            remaining -= len(chunk)
+    return b"".join(chunks)
+
+
 def read_file(grants: GrantSet | None, node_id: str, path_value: str,
               now: datetime | None) -> str:
     op = "filesystem.read"
@@ -72,15 +89,14 @@ def read_file(grants: GrantSet | None, node_id: str, path_value: str,
     fd = _open_regular(resolved, node_id, op, os.O_RDONLY)
     try:
         limit = capability.max_bytes
-        if limit is not None:
-            # bounded read on the open handle: the size that matters is
-            # the size we actually read, from the object we authorized
-            data = os.read(fd, limit + 1)
-            if len(data) > limit:
-                raise grants.check(op, resolved, now, nbytes=len(data),
-                                   node=node_id)  # E403
-        else:
-            data = os.read(fd, 2 ** 62)
+        # bounded read on the open handle: the size that matters is
+        # the size we actually read, from the object we authorized.
+        # chunked so no platform pre-allocates a huge buffer
+        cap = limit + 1 if limit is not None else None
+        data = _read_bounded(fd, cap)
+        if limit is not None and len(data) > limit:
+            raise grants.check(op, resolved, now, nbytes=len(data),
+                               node=node_id)  # E403
     except OSError as exc:
         raise _io_error(node_id, op, resolved, exc) from exc
     finally:
