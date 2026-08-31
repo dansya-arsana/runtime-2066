@@ -201,7 +201,7 @@ Design properties:
   control flow — a deliberate constraint that keeps evaluation
   order-independent and side-effect placement explicit.
 
-The current instruction set is 29 operations across values, arithmetic,
+The current instruction set is 30 operations across values, arithmetic,
 logic, functions, I/O, crypto, filesystem, data, sessions, and lists —
 each with a declared effect class and capability requirement published
 in a machine-readable reference generated from the live runtime
@@ -379,7 +379,7 @@ The verification economics that motivate the design:
 |---|---:|
 | parse + validate, 2,000-node graph | 14 ms |
 | regenerate both export backends after an engine change | 3.7 ms |
-| full deterministic suite (265 tests) | ~13 s |
+| full deterministic suite (394 tests) | ~30 s |
 
 ---
 
