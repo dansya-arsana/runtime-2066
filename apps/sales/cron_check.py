@@ -27,7 +27,8 @@ sys.path.insert(0, str(ROOT))
 from runtime import analyze, execute, parse_source  # noqa: E402
 from runtime.capabilities import GrantSet  # noqa: E402
 
-GRANTS = GrantSet.from_file(str(APP_DIR / "caps.json"))
+GRANTS = GrantSet.from_file(
+    str(ROOT / "policies" / "deployment" / "sales-caps.json"))
 STATE_PATH = Path(os.environ.get(
     "2066_SALES_DB", str(APP_DIR / "sales.db"))).parent / "integration_status.json"
 
@@ -40,7 +41,8 @@ def http_transport(url: str) -> str:
 
 def main() -> None:
     program = parse_source(
-        (APP_DIR / "api_health.ai").read_text(encoding="utf-8"))
+        (ROOT / "programs" / "sales" / "integration" / "api_health.ai")
+        .read_text(encoding="utf-8"))
     analysis = analyze(program)
     old_in, old_out = sys.stdin, sys.stdout
     sys.stdin, sys.stdout = io.StringIO(""), io.StringIO()

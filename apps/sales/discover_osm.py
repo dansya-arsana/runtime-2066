@@ -90,7 +90,8 @@ def main() -> None:
 
     # same wiring as the server: this connector holds the db + grants,
     # the pipeline semantics stay inside the programs
-    GRANTS = GrantSet.from_file(str(APP_DIR / "caps.json"))
+    GRANTS = GrantSet.from_file(
+        str(ROOT / "policies" / "deployment" / "sales-caps.json"))
     db_path = __import__("os").environ.get(
         "2066_SALES_DB", str(APP_DIR / "sales.db"))
     ident = json.loads((Path(__import__("os").environ.get(
@@ -103,7 +104,8 @@ def main() -> None:
     added, skipped = 0, 0
     for c in candidates:
         program = parse_source(
-            (APP_DIR / "biz_add.ai").read_text(encoding="utf-8"))
+            (ROOT / "programs" / "sales" / "business" / "add.ai")
+            .read_text(encoding="utf-8"))
         analysis = analyze(program)
         db = DataPlane(db_path, program.entities, GRANTS, None)
         tier = 2 if c["website"] else 1
