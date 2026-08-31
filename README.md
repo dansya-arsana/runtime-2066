@@ -1,5 +1,7 @@
 # 2066 — AI-Native Autonomous Runtime
 
+[![CI](https://github.com/dansya-arsana/runtime-2066/actions/workflows/ci.yml/badge.svg)](https://github.com/dansya-arsana/runtime-2066/actions/workflows/ci.yml)
+
 **Status: 1.4 — Stages A–D complete: full-stack apps, capability
 authority, multisig + delegation chains, MCP tools, reputation +
 red-team verification. 335 tests green.**
