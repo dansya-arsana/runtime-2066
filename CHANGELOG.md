@@ -1,6 +1,42 @@
 # Changelog
 
-## [unreleased] — whole-plan pass: H8 seed + remaining sections
+## [unreleased] — external-review fixes: host hardening + doc truth
+
+Security-relevant fixes from an independent review (adopted as the
+P-sequence in ROADMAP.md):
+
+- **P1 filesystem boundary closed**: authorization now covers the
+  symlink-RESOLVED path; opens act on the resolved target with
+  O_NOFOLLOW (where available); non-regular objects refused; read size
+  limits enforced as bounded reads ON THE OPEN HANDLE — the
+  check-then-open TOCTOU and symlink-escape classes are gone
+  (tests/security/test_fs_boundaries.py, 5 cases incl. escape-deny and
+  in-scope-alias-works).
+- **P2 execution budgets**: ExecutionBudget (max_nodes/steps/
+  literal_bytes/list_items/call_depth/io_bytes/rows) enforced at
+  identical semantic points in BOTH adapters; exhaustion is the
+  canonical deterministic E410 (same program+budget -> identical
+  refusal, cross-adapter — proven in tests/runtime/test_budget.py).
+  Termination was never bounded resource consumption; now it is.
+- **Net egress policy (normative)**: spec/netpolicy.md defines
+  transport-adapter duties (resolve-once, forbidden address classes,
+  redirect refusal, IDN normalization, response caps, TLS policy);
+  runtime/netpolicy.py is the reference enforcement and now guards the
+  live sales app + cron transports (DNS-rebinding-to-localhost,
+  metadata endpoints, redirect chains, response bombs: all refused
+  pre-connection where possible — 6 tests).
+- **P0 doc truth**: SPEC.md no longer contradicts the exporters
+  ("execution never requires translation; exports are non-canonical
+  artifacts outside the authority plane") + a normative three-class
+  backend table (conformant executor / compatibility export /
+  accelerator). THREAT_MODEL.md rebuilt versioned (Protocol 0.2 /
+  Runtime 1.4.1) as CURRENT guarantees/boundaries/surfaces/gaps +
+  closed-history + out-of-scope; the M3/M4 model is archived verbatim
+  in docs/security/history/.
+- E410 documented everywhere the error namespace lives (airef, manual,
+  reference.json, spec/errors.md).
+
+## [previous] whole-plan pass: H8 seed + remaining sections
 
 ### The headline
 - **Independent Rust canonicalizer (H8/SS36 step 3)**: zero-dependency

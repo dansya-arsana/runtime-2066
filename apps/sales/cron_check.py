@@ -34,9 +34,9 @@ STATE_PATH = Path(os.environ.get(
 
 
 def http_transport(url: str) -> str:
-    with urllib.request.urlopen(urllib.request.Request(
-            url, headers={"User-Agent": "2066-sales/1.0"}), timeout=8) as r:
-        return r.read().decode("utf-8")
+    # netpolicy reference enforcement (spec/netpolicy.md)
+    from runtime.netpolicy import default_transport, guarded_transport
+    return guarded_transport(default_transport(timeout=8))(url)
 
 
 def main() -> None:

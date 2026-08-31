@@ -414,6 +414,15 @@ A white paper that hides its losses is marketing. Measured and admitted:
 7. **Evidence chains detect tampering, not exfiltration** — an attacker
    who can delete the entire log destroys it (single-machine scope).
    Distributed anchoring is future work.
+8. **Transport conformance is trusted, not verified** — the normative
+   egress policy (spec/netpolicy.md) binds adapters, but the runtime
+   cannot see inside a host transport; sovereign deployments use
+   audited adapters.
+
+(Closed since the last revision: symlink/TOCTOU filesystem escapes —
+resolved-path authorization with handle-bounded reads; and unbounded
+hostile resource consumption — execution budgets with the deterministic
+E410.)
 
 ---
 

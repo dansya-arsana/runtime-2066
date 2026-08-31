@@ -45,6 +45,7 @@
   "E406": "authority: session token invalid or signature failed",
   "E407": "authority: session token expired",
   "E408": "authority: delegation bound to a different program hash",
+  "E410": "authority: resource budget exceeded (deterministic limit — nodes/steps/literals/lists/call-depth/io/rows)",
   "E501": "data: unknown entity",
   "E502": "data: unknown column",
   "E503": "data: identity column cannot be updated",

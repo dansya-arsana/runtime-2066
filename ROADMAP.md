@@ -388,3 +388,29 @@ Genesis/wallets/robots/blockchain first").
 - [ ] H8 remainder: validator + semantics + capability verifier in
       Rust; H9 FIDO2 (needs hardware); §68 model-independence study
       (needs multiple live models) — next cycle
+
+### External review cycle — adopted P-sequence (2026-08-31)
+
+An independent review of the post-hardening state confirmed direction
+("do not restart architecture") and set this sequence; P0–P2 and the
+net-policy item landed in the same pass:
+
+- [x] P0 synchronize SPEC / WHITEPAPER / THREAT_MODEL (export wording +
+      normative backend classes; threat model rebuilt as versioned
+      CURRENT/* sections, history archived)
+- [x] P1 filesystem symlink + TOCTOU boundaries (resolved-path
+      authorization, O_NOFOLLOW opens, handle-bounded reads; 5 new
+      boundary tests)
+- [x] P2 execution/resource budgets — deterministic canonical E410 in
+      both adapters (7 new tests incl. cross-adapter equality)
+- [x] net egress policy (review item 5): spec/netpolicy.md normative
+      transport duties + runtime/netpolicy.py reference enforcement
+      (address-class refusal, redirect refusal, response caps) wired
+      into the live app transports (6 new tests)
+- [ ] P3 Rust validator · P4 Rust pure semantics · P5 Rust capability
+      verifier · P6 Python<->Rust differential corpus — the H8 track
+- [ ] P7 FIDO2 · P8 freeze Protocol 0.2 semantics
+- [ ] P9 LAN envelope · P10 cross-machine offline bundle flow · P11 Tor
+      (offline BEFORE Tor: identity ≠ transport is the property to
+      prove first) · P12 distributed evidence · P13 WASI
+

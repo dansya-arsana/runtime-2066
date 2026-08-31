@@ -22,12 +22,15 @@ RUNTIME_DIR = ROOT / "runtime"
 CORE_MODULES = {
     "errors", "types", "parser", "serialize", "hashing", "validator",
     "airef", "packages", "ports",   # contracts (SS13): typing only
+    "budget",    # resource authority: deterministic E410 limits
 }
 
 # adapter/shell modules inside the runtime package: perform effects the
 # core authorized (storage, fs, identity, sessions, evidence files)
 ADAPTER_MODULES = {
-    "data", "memory_store", "fsops", "identity", "session", "evidence",
+    "data", "memory_store", "fsops", "identity", "session",
+    "netpolicy",  # transport-policy reference (spec/netpolicy.md)
+    "evidence",
     "revocation",
     "keydisk", "multisig", "delegation", "pinning", "reputation",
     "proposals", "redteam", "fuzzer",

@@ -136,6 +136,7 @@ _ERROR_CODES = {
     "E406": "authority: session token invalid or signature failed",
     "E407": "authority: session token expired",
     "E408": "authority: delegation bound to a different program hash",
+    "E410": "authority: resource budget exceeded (deterministic limit — nodes/steps/literals/lists/call-depth/io/rows)",
     "E560": "network: net.fetch transport failure (unreachable, non-2xx, timeout)",
     "E308": "runtime: list index out of range",
     "E601": "proposal: made against a different base hash (graph moved)",

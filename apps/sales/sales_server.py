@@ -196,10 +196,11 @@ def _rows(token: str) -> dict:
 
 
 def _http_transport(url: str) -> str:
-    import urllib.request
-    with urllib.request.urlopen(urllib.request.Request(
-            url, headers={"User-Agent": "2066-sales/1.0"}), timeout=8) as r:
-        return r.read().decode("utf-8")
+    # spec/netpolicy.md reference enforcement: address-class refusal,
+    # no redirects, bounded reads (host-supplied transport, so the
+    # runtime still owns no sockets)
+    from runtime.netpolicy import default_transport, guarded_transport
+    return guarded_transport(default_transport(timeout=8))(url)
 
 
 def _integration_status() -> dict:

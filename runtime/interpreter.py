@@ -25,18 +25,23 @@ def execute(program: Program, analysis: Analysis | None = None, *,
             grants: GrantSet | None = None, now: datetime | None = None,
             db: DataPlane | None = None,
             sessions: SessionVerifier | None = None,
-            revocations=None, net=None) -> list[object]:
+            revocations=None, net=None,
+            budget=None) -> list[object]:
     """Evaluate the graph; return emit values ordered by numeric node id.
 
     `grants` carries the runtime-held capability set, `db` the semantic
-    data plane, `sessions` the session-token verifier, and `net` the
-    host-supplied outbound transport; None (the default) denies every
-    effectful operation.
+    data plane, `sessions` the session-token verifier, `net` the
+    host-supplied outbound transport, and `budget` the ExecutionBudget
+    spec (default: DEFAULT_BUDGET); None (the default) denies every
+    effectful operation. Budget exhaustion is the canonical E410.
     """
     if analysis is None:
         analysis = analyze(program)
+    from .budget import BudgetTracker
+    tracker = BudgetTracker(budget)
+    tracker.check_program(program)
     machine = _Machine(program, analysis, grants, now, db, sessions,
-                       revocations, net)
+                       revocations, net, tracker)
     return machine.run()
 
 
@@ -49,9 +54,10 @@ class _Machine:
     def __init__(self, program: Program, analysis: Analysis,
                  grants: GrantSet | None, now: datetime | None,
                  db: DataPlane | None, sessions: SessionVerifier | None,
-                 revocations=None, net=None):
+                 revocations=None, net=None, tracker=None):
         self.revocations = revocations
         self.net = net
+        self.budget = tracker
         self.program = program
         self.analysis = analysis
         self.grants = grants
@@ -63,6 +69,7 @@ class _Machine:
         main = self.program.nodes
         values: dict[str, object] = {}
         for node_id in self.analysis.scopes["main"].order:
+            self.budget.step(node_id)
             node = main[node_id]
             op = node.field("op")
             inputs = [values[ref] for ref, _ in node.inputs]
@@ -84,11 +91,16 @@ class _Machine:
         if op == "filesystem.read":
             return fsops.read_file(self.grants, node.id, ins[0], self.now)
         if op == "filesystem.write":
-            return fsops.write_file(self.grants, node.id, ins[0], ins[1], self.now)
+            written = fsops.write_file(self.grants, node.id, ins[0],
+                                       ins[1], self.now)
+            self.budget.io(written, node.id)
+            return written
         if op == "system.read":
             return fsops.read_line(node.id)
         if op == "system.write":
-            return fsops.write_str(node.id, ins[0])
+            written = fsops.write_str(node.id, ins[0])
+            self.budget.io(len(ins[0].encode("utf-8")), node.id)
+            return written
         if op == "concat":
             return ops.concat(ins[0], ins[1])
         if op == "crypto.digest":
@@ -119,25 +131,33 @@ class _Machine:
         if op == "data.update":
             if node.has("when") and ins[-1] is False:
                 return 0  # guarded write denied: zero rows touched
-            return self.db.update(node.id, node.field("entity"),
+            rows = self.db.update(node.id, node.field("entity"),
                                   node.field("set"), ins[0],
                                   node.field("where"), ins[1]) \
                 if self.db else _no_db(node.id, op)
+            self.budget.rows(rows, node.id)
+            return rows
         if op == "data.delete":
             if node.has("when") and ins[-1] is False:
                 return 0  # guarded delete denied: zero rows touched
-            return self.db.delete(node.id, node.field("entity"),
+            rows = self.db.delete(node.id, node.field("entity"),
                                   node.field("where"), ins[0]) \
                 if self.db else _no_db(node.id, op)
+            self.budget.rows(rows, node.id)
+            return rows
         if op == "net.fetch":
-            return self._net_fetch(node, ins[0])
+            body = self._net_fetch(node, ins[0])
+            self.budget.io(len(body.encode("utf-8")), node.id)
+            return body
         if op == "data.list":
             limit = int(node.field("limit")) if node.has("limit") else None
-            return self.db.list_rows(node.id, node.field("entity"),
-                                     node.field("column"),
-                                     node.field("where"), ins[0],
-                                     limit=limit) \
+            items = self.db.list_rows(node.id, node.field("entity"),
+                                      node.field("column"),
+                                      node.field("where"), ins[0],
+                                      limit=limit) \
                 if self.db else _no_db(node.id, op)
+            self.budget.list_len(len(items), node.id)
+            return items
         if op == "list.length":
             return ops.list_length(ins[0])
         if op == "list.get":
@@ -173,7 +193,9 @@ class _Machine:
                        f"{exc.__class__.__name__}: {exc}") from exc
         return body if isinstance(body, str) else str(body)
 
-    def _call(self, node: Node, args: list[object]) -> object:
+    def _call(self, node: Node, args: list[object],
+              depth: int = 1) -> object:
+        self.budget.call_depth(depth, node.id)
         function = self.program.functions[node.field("callee")]
         scope = self.analysis.scopes[function.name]
         params = sorted(
@@ -187,6 +209,7 @@ class _Machine:
         for node_id in scope.order:
             if node_id in values:  # param, already bound
                 continue
+            self.budget.step(node_id)
             inner = function.nodes[node_id]
             op = inner.field("op")
             inputs = [values[ref] for ref, _ in inner.inputs]
@@ -194,7 +217,8 @@ class _Machine:
                 # guarded effect: guard value rides in as the last input
                 inputs.append(values[inner.field("when")])
             if op == "call":
-                values[node_id] = self._call(inner, inputs)
+                values[node_id] = self._call(inner, inputs,
+                                             depth=depth + 1)
             else:
                 values[node_id] = self._eval(inner, op, inputs)
             if op == "return":

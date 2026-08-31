@@ -128,7 +128,7 @@ E208 bad compare mode · E210 unknown callee · E211 call arity ·
 E212 recursion · E214 wrong scope · E215 missing return · E216 bad param
 indexes · E301 ÷0 · E302 i64 overflow · E303 f64→i64 unrepresentable ·
 E304 bad string→number · E305 filesystem IO · E308 list index out of
-range · E401 no capability · E402 expired · E403 over limit ·
+range · E401 no capability · E402 expired · E403 over limit · E410 resource budget exceeded (deterministic) ·
 E406 session token invalid · E407 session expired · E408 delegation
 bound to other program · E501 unknown
 entity · E502 unknown column · E503 identity update · E505 SQLite
@@ -208,6 +208,14 @@ node 005
 op emit
 input 004
 ```
+
+## Resource budgets (E410)
+
+Every execution runs under a resource budget (nodes, steps, literal
+bytes, list items, call depth, io bytes, rows). Hostile-size programs
+are rejected deterministically with E410 — same program + same budget,
+same refusal. Budgets are authority: if a task legitimately needs more,
+the host raises the spec; never try to work around E410.
 
 ## Semantic packages & inspect
 

@@ -117,3 +117,13 @@ E560 transport) · E6xx proposals. The plan's finer split (E7xx storage,
 E8xx transport, E9xx evidence) is a FUTURE major-version remap with
 migration aliases — not applied now, precisely because codes are
 protocol.
+
+## E410 — resource budget exceeded
+
+Budgets are authority (SS76): `ExecutionBudget` limits (nodes, steps,
+literal bytes, list items, call depth, io bytes, rows) are checked at
+identical semantic points in both adapters, so exhaustion is the
+canonical deterministic E410 — never a crash, timeout, or OOM. Wall-clock
+deadlines stay host-side by design (spec/netpolicy.md bounds transport
+waits separately).
+

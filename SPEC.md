@@ -6,10 +6,14 @@ behavior claim is testable against the conformance corpus
 implementation (rust-canonicalizer) reproduces canonical identity for
 the entire corpus — the spec, not any codebase, is the source of truth.
 
-2066 programs are **semantic graphs**, not source code in a conventional
-language. The runtime parses, validates, and executes them directly; no
-JavaScript, Python, Rust, or shell is ever generated (roadmap §12 success
-condition).
+2066 programs are **semantic graphs**. Execution never requires
+translation into a conventional programming language.
+
+Compatibility exporters MAY generate external artifacts (Python,
+JavaScript) — such artifacts are not canonical programs and are outside
+the 2066 authority plane unless executed through a conformant adapter.
+No shell, eval, or arbitrary process execution exists in the language
+(ADR-003), and never will.
 
 Pipeline:
 
@@ -65,3 +69,14 @@ Design invariants for everything below:
 7. **Protocol versioning.** `PROTOCOL_VERSION = 0.2` is separate from
    runtime version; programs may declare `protocol 0.2` and incompatible
    runtimes refuse (E109) rather than misread.
+
+## Backend classification (normative, plan SS72-73)
+
+| Class | Members | Obligation |
+|---|---|---|
+| **CONFORMANT EXECUTOR** | tree adapter, plan VM, future Rust runtime, future WASI executor | preserve EXACT 2066 semantics: same canonical hash, same results, same structured errors, same capability decisions (proven pairwise by the determinism suite and, for canonical identity, cross-implementation by the Rust canonicalizer on the full corpus) |
+| **COMPATIBILITY EXPORT** | Python export, JavaScript export | external representation with DOCUMENTED divergences; never a source of truth; may not expand authority (SS73) |
+| **ACCELERATOR BACKEND** | future CUDA / Metal / ROCm paths | execute restricted semantic subsets; performance may change, authority may not |
+
+Rule binding all classes (SS73): **no backend may produce effects the
+canonical program was not authorized to cause.**

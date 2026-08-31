@@ -1,79 +1,127 @@
-# THREAT_MODEL.md — Milestone 4a scope
+# THREAT_MODEL.md — Protocol 0.2 / Runtime 1.4.1
 
-> Updated 2026-08-31 (H6/H7 hardening): fuzz campaign over trust loaders complete (one crash fixed: verify_evidence on corrupt lines); signature-stripping pinned as the known transition hole closed by `--profile production`; signed releases + reproducible wheel now give an integrity story for distributed artifacts.
+> Versioned with the protocol (plan SS80). A security reviewer must
+> never wonder whether a statement here is stale: everything is CURRENT
+> as of this header. Historical milestone-scoped models live in
+> [docs/security/history/](docs/security/history/).
+>
+> Basis: 412 deterministic tests, the fuzz/property campaigns, the
+> security/adversarial suites, and the independent Rust canonicalizer.
 
-Master roadmap §88/§89 define the long-term threat model. This file states
-what the **current** artifact does and does not defend against, so no one
-mistakes this runtime for the fully secured 2066.
+## CURRENT GUARANTEES
 
-## Assets
+1. **Semantics**: a program means exactly its validated graph; same
+   program + same runtime ⇒ byte-identical results and errors, in both
+   execution adapters, and canonical identity reproduces across the
+   independent Rust implementation (28/28 corpus).
+2. **Authority is capability-only, default-deny**: every effectful op
+   (filesystem read/write, data read/write/delete, net.fetch, session
+   verify) requires an explicit, unexpired, unrevoked, scope-matched
+   grant. No ambient authority, no catch-all scopes, no shell/eval ops
+   exist (ADR-002/003).
+3. **Filesystem boundary (hardened this cycle)**: authorization covers
+   the symlink-RESOLVED target; the open acts on the resolved path with
+   O_NOFOLLOW where available; non-regular objects are refused; read
+   size limits are enforced on the open handle (bounded read) — the
+   check-then-open TOCTOU class is closed
+   (tests/security/test_fs_boundaries.py).
+4. **Resource authority (new this cycle)**: execution budgets (nodes,
+   steps, literal bytes, list items, call depth, io bytes, rows) are
+   part of authority with the canonical deterministic **E410**;
+   termination-by-construction plus budgets bounds hostile input
+   (tests/runtime/test_budget.py).
+5. **Network egress**: hostname-allowlisted by `net.request` grants,
+   host-supplied transport (runtime owns no sockets); the reference
+   transport refuses forbidden address classes, redirects, and
+   oversized responses (spec/netpolicy.md,
+   tests/security/test_netpolicy.py). Fetched bodies count against the
+   io budget.
+6. **Evidence**: hash-chained, tamper-evident by verification
+   (`2066 evidence`), metadata not payloads; bundle installs are
+   recorded events.
+7. **Integrity of distribution**: signed release manifests (file-by-file
+   tree proof), SPDX SBOM, byte-reproducible wheel, verify-then-install
+   offline bundles.
+8. **Identity**: ed25519 agent identities; programs verify session
+   tokens but structurally cannot mint them; multisig m-of-n and
+   narrowing-only delegation chains; issuer pinning.
 
-- Integrity of executed semantics (a program must mean exactly what its
-  graph says).
-- Determinism of results and errors (auditability depends on it).
-- **Filesystem integrity** (new in M3): programs may touch only the paths
-  the human's grant set covers.
+## CURRENT TRUST BOUNDARIES
 
-## Trust boundaries
+- **Untrusted**: every `.ai` program, every grant file's *content*
+  (verified, never trusted), every transport response, every bundle
+  until signature+hashes verify.
+- **Trusted code**: the TCB (docs/security/TCB.md) — enforced by
+  import-analysis to import no storage/network/process machinery in the
+  core.
+- **Trusted humans**: grant issuers and key holders — the root of
+  authority, bounded by scope/expiry/multisig, never by trust in a
+  model.
+- **Host trust**: hosts supply transports, clocks, storage; a malicious
+  host can lie to the runtime (out of scope below).
 
-- `.ai` program files are **untrusted input**. The runtime assumes a
-  hostile program: malformed structure, deep/huge graphs, extreme literals,
-  and — new in M3 — attempts to read or write outside its granted scopes.
-- The **grant file is policy**, authored by the human/policy layer, loaded
-  once at process start. Programs have no op to read, create, widen, or
-  revoke grants; the authority plane is invisible to them. **Signed grant
-  envelopes (M4a) are verified fail-closed at load** — editing a scope,
-  limit, or timestamp in a signed file invalidates it; `--require-signed`
-  refuses unsigned files outright.
-- Everything beyond granted filesystem scopes (rest of the disk, network,
-  processes) remains unreachable: no ops exist for it.
+## CURRENT ATTACK SURFACES
 
-## What the runtime guarantees (M3)
+| Surface | Enforced by |
+|---|---|
+| malformed programs (parse/validate) | grammar + typed structured errors; fuzzed |
+| authority escalation / scope escape | capability checks at every effect; adversarial + security suites |
+| filesystem symlink/TOCTOU | resolved-path authorization, O_NOFOLLOW opens, handle-bounded reads |
+| resource exhaustion (graph size, literals, lists, io) | execution budgets, E410 (deterministic) |
+| DNS rebinding / redirect abuse / metadata endpoints / response bombs | netpolicy transport duties + io budget |
+| grant/envelope/proposal/evidence tampering | signed envelopes, hash chains; 980+ mutant fuzz campaign |
+| session forgery/replay | signed expiring tokens, revocation lists (E406/E407) |
+| supply chain | signed releases, SBOM, reproducible wheel, verified bundles |
+| package-address traversal | identifier-validated semantic addresses |
 
-- No undefined behavior: every malformed construct yields a structured,
-  deterministic error; arithmetic is total (E301/E302); casts are total
-  (E303/E304).
-- Termination: DAG scopes + acyclic call graph.
-- **Default deny**: executing an effectful op with no grant set attached is
-  denied (E401). A grant on `/incoming` covers `/incoming/a.txt` but not
-  `/incoming.txt` (component-wise scope match) and not `/etc`.
-- **No partial writes**: `filesystem.write` checks scope, expiry, and size
-  limits before writing a single byte.
-- **No self-authorization**: denials (E401/E402/E403) are raised by the
-  runtime, never by the program; exit code 4 distinguishes "the policy said
-  no" from crashes for supervising agents/humans.
+## CURRENT KNOWN GAPS (honest)
 
-## Known gaps (accepted for M3, tracked for later phases)
+1. **Unsigned grants accepted in the development profile** (transition).
+   Production/sovereign refuse unconditionally; the hole is
+   fuzz-pinned. Removal date: before any open deployment.
+2. **Single-machine evidence**: chains detect edits, not whole-log
+   deletion. Distributed checkpoints are gated before open networking
+   (plan SS52).
+3. **Transport adapter conformance is trusted, not verified**: a
+   non-conformant host transport could ignore spec/netpolicy.md duties
+   (e.g. follow redirects internally). The runtime cannot see inside a
+   transport; sovereign deployments must use audited adapters.
+4. **Name-based egress inside an allowed host**: the allowlist is by
+   hostname; an allowed host serving attacker content (compromised
+   origin) is content-trust, out of the semantic model.
+5. **Python runtime as reference oracle**: not memory-safe; the Rust
+   runtime (H8, started — canonicalizer done) is the path to a
+   memory-safe TCB.
+6. **No multi-machine protocol yet**: proposals/evidence/bundles are
+   signed files; transport (Appendix E) is unbuilt by sequencing
+   decision.
+7. **Wall-clock deadlines are host-side** (deliberately outside
+   deterministic semantics); countable budgets are the deterministic
+   layer.
 
-| Gap | Risk | Planned mitigation (phase) |
-|---|---|---|
-| No resource limits on computation | a huge/deep pure graph can exhaust host memory/time | runtime budgets as capability constraints (Phase 4–5) |
-| Grants are unauthenticated files | ~~anyone who can edit the JSON can widen access~~ **closed in M4a for signed files**: signature covers scopes, limits, expiry; tampering refuses the whole file | **M9**: human approval from any-disk keys (`key-format`/`approve`, spec/hardware-key.md) makes signed delegation cheap — bearer-object limits stated there; real secure element at Phase 10 |
-| Path normalization is not symlink-aware | a symlink inside a granted scope can point outside | resolve symlinks (realpath) at enforcement before M3 is used beyond local dev |
-| TOCTOU on read limits | file can grow between check and read | read with size cap atomically (open with limit) before production use |
-| No provenance/evidence | executions are not signed or hashed into an audit trail | evidence protocol (Appendix C.5) |
-| No revocation mid-run | a long-running program keeps its grant until it finishes | per-operation re-check exists; add lease/revocation channel (Phase 5+) |
+## CLOSED HISTORICAL GAPS
 
-## Standing rule
+- ~~path normalization not symlink-aware~~ / ~~TOCTOU on read limits~~
+  → closed this cycle (resolved-path auth + handle-bounded reads).
+- ~~no resource limits on computation~~ → closed this cycle
+  (execution budgets, E410).
+- ~~no provenance/evidence~~ → closed (hash-chained evidence,
+  verify-evidence command, install events).
+- ~~no network egress story~~ → capability-gated net.fetch + normative
+  transport policy + reference enforcement (new surface, new policy).
+- ~~verify_evidence crashes on corrupt input~~ → reports ok:false
+  (fuzz-found, fixed).
+- ~~forged session tokens crash verifier~~ → clean E406
+  (adversarial-found, fixed).
+- ~~unsigned grants accepted everywhere~~ → profile-gated (dev-only).
 
-Every new effectful operation must land with: an effect classification, a
-capability action, scope/limit/expiry enforcement in **both** adapters, and
-denial tests — or it does not merge (roadmap §20 forbidden defaults).
+## OUT OF SCOPE (stated, not hidden)
 
-## Surfaces added in the hardening cycle (H0–H8 seed)
-
-- **Outbound egress (`net.fetch`)**: hostname-allowlisted by
-  `net.request` grants; the runtime owns no sockets (transport is
-  host-injected); denied hosts fail closed with zero calls (tested).
-  Residual: DNS/IP-level tunneling inside an ALLOWED host is out of
-  scope — the allowlist is by name, not content.
-- **Semantic addresses**: `package::module::unit` resolution is
-  identifier-validated before any filesystem use; traversal payloads
-  are refused (tested).
-- **Update bundles / releases**: signed envelope + per-file hashes;
-  install is verify-everything-then-copy and records evidence.
-  Residual: trust roots the operator's key hygiene.
-- **Known, documented**: unsigned grants accepted in development
-  profile only (fuzz-pinned); single-machine evidence chains detect
-  edits, not deletion.
-
+- Compromised host OS / hardware side-channels.
+- Traffic-analysis and anonymity (Tor adapter is future, and is
+  transport, not semantics).
+- Key-holder complicity within their granted scope (authority, not
+  cryptography, problem — mitigated by multisig + narrowing).
+- Content correctness of allowed remote hosts.
+- Quantum adversaries (crypto agility planned; ed25519 today).
+- "Unhackable" claims of any kind.

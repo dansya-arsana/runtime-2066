@@ -76,10 +76,14 @@ def execute_plan(program: Program, analysis: Analysis | None = None, *,
                  grants: GrantSet | None = None, now: datetime | None = None,
                  db: DataPlane | None = None,
                  sessions: SessionVerifier | None = None,
-                 net=None) -> list[object]:
-    """Adapter entry point: same contract as interpreter.execute."""
+                 net=None, budget=None) -> list[object]:
+    """Adapter entry point: same contract as interpreter.execute
+    (including the E410 budget semantics)."""
     plan = compile_plan(program, analysis)
-    vm = _VM(plan, grants, now, db, sessions, net)
+    from .budget import BudgetTracker
+    tracker = BudgetTracker(budget)
+    tracker.check_program(program)
+    vm = _VM(plan, grants, now, db, sessions, net, tracker)
     vm.exec(plan.main, [])
     return vm.emits
 
@@ -185,19 +189,24 @@ def _compile_scope(
 class _VM:
     def __init__(self, plan: Plan, grants: GrantSet | None,
                  now: datetime | None, db: DataPlane | None,
-                 sessions: SessionVerifier | None, net=None):
+                 sessions: SessionVerifier | None, net=None, tracker=None):
         self.plan = plan
         self.grants = grants
         self.now = now
         self.db = db
         self.sessions = sessions
         self.net = net
+        self.budget = tracker
         self.emits: list[object] = []
 
     def exec(self, scope: ScopePlan, args: list[object]) -> object | None:
         slots: list[object] = list(args) + [None] * (scope.slot_count - len(args))
         stack: list[object] = []
+        last_node = None
         for ins in scope.instrs:
+            if ins.node != last_node:      # one semantic step per node,
+                self.budget.step(ins.node)  # matching the tree adapter
+                last_node = ins.node
             op = ins.op
             if op == "LOAD":
                 stack.append(slots[ins.arg])
@@ -226,21 +235,36 @@ class _VM:
                 call_args = stack[len(stack) - argc:] if argc else []
                 if argc:
                     del stack[len(stack) - argc:]
-                slots[ins.out] = self.exec(self.plan.functions[name], call_args)
+                self.budget.call_depth(getattr(self, "_depth", 0) + 1,
+                                       ins.node)
+                saved = getattr(self, "_depth", 0)
+                self._depth = saved + 1
+                try:
+                    slots[ins.out] = self.exec(
+                        self.plan.functions[name], call_args)
+                finally:
+                    self._depth = saved
             elif op == "READ":
                 slots[ins.out] = fsops.read_file(
                     self.grants, ins.node, stack.pop(), self.now)
             elif op == "WRITE":
                 content = stack.pop()
                 path = stack.pop()
-                slots[ins.out] = fsops.write_file(
+                written = fsops.write_file(
                     self.grants, ins.node, path, content, self.now)
+                self.budget.io(written, ins.node)
+                slots[ins.out] = written
             elif op == "STDIN":
                 slots[ins.out] = fsops.read_line(ins.node)
             elif op == "NETFETCH":
-                slots[ins.out] = _net_fetch(self, ins.node, stack.pop())
+                body = _net_fetch(self, ins.node, stack.pop())
+                self.budget.io(len(body.encode("utf-8")), ins.node)
+                slots[ins.out] = body
             elif op == "STDOUT":
-                slots[ins.out] = fsops.write_str(ins.node, stack.pop())
+                text = stack.pop()
+                written = fsops.write_str(ins.node, text)
+                self.budget.io(len(text.encode("utf-8")), ins.node)
+                slots[ins.out] = written
             elif op == "CONCAT":
                 b = stack.pop()
                 a = stack.pop()
@@ -264,9 +288,11 @@ class _VM:
                                "require --db (default deny)")
                 limit = (int(ins.arg["limit"])
                          if "limit" in ins.arg else None)
-                slots[ins.out] = self.db.list_rows(
+                items = self.db.list_rows(
                     ins.node, ins.arg["entity"], ins.arg["column"],
                     ins.arg["where"], stack.pop(), limit=limit)
+                self.budget.list_len(len(items), ins.node)
+                slots[ins.out] = items
             elif op == "LLEN":
                 slots[ins.out] = ops.list_length(stack.pop())
             elif op == "LGET":
@@ -277,8 +303,11 @@ class _VM:
                 slots[ins.out] = ops.list_join(stack.pop(), separator)
             elif op == "DATA":
                 op_name, fields = ins.arg
-                slots[ins.out] = _dispatch_data(
+                result = _dispatch_data(
                     self, op_name, fields, ins.node, stack)
+                if op_name in ("data.update", "data.delete"):
+                    self.budget.rows(result, ins.node)
+                slots[ins.out] = result
             elif op == "EMIT":
                 self.emits.append(stack.pop())
             elif op == "RETURN":
