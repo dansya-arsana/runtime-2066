@@ -304,7 +304,7 @@ async function loadIntegrations() {
       </div>
       <span class="stage ${up ? "st-won" : "st-lost"}">${esc(live.verdict || "checking…")}</span>
     </div>`;
-  const when = cron.checked_at ? new Date(cron.checked_at + "Z").toLocaleString() : null;
+  const when = cron.checked_at ? new Date(cron.checked_at).toLocaleString() : null;
   $("cron-info").innerHTML = cron.verdict
     ? `<div class="svc"><div>
          <div class="svc-name">last cron run</div>
