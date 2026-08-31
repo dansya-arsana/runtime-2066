@@ -203,7 +203,16 @@ class Handler(BaseHTTPRequestHandler):
         elif path == "/api/board":
             self._json(_rows(q.get("token", "")))
         else:
-            self._json({"error": "not found"}, 404)
+            static_name = "index.html" if path == "/" else path.lstrip("/")
+            if static_name in STATIC:
+                body = (APP_DIR / static_name).read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", STATIC[static_name])
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            else:
+                self._json({"error": "not found"}, 404)
 
     def do_POST(self):
         body = self._body()
