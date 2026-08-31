@@ -5,7 +5,7 @@ WORKDIR /app
 COPY . /app
 RUN pip install --no-cache-dir /app
 
-WORKDIR /app/examples/sales_app
+WORKDIR /app/apps/sales
 ENV HOST=0.0.0.0 PORT=8628
 EXPOSE 8628
 CMD ["python", "sales_server.py"]
