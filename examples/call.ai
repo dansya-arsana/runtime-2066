@@ -1,0 +1,34 @@
+# call/return demo: named subgraphs (roadmap §11 call/return, §14 Phase 1)
+# Run: python -m runtime run examples/call.ai   ->   42
+
+func double
+node 101
+op param
+index 0
+type i64
+
+node 102
+op add
+input 101 101
+output i64
+
+node 103
+op return
+input 102
+
+main
+
+node 001
+op const
+type i64
+value 21
+
+node 002
+op call
+callee double
+input 001
+output i64
+
+node 003
+op emit
+input 002

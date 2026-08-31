@@ -1,0 +1,53 @@
+# First Public Demo (roadmap §81): calculate (100 * 1.05)^10.
+# No loops in V0, so the power is an explicit multiply chain — the semantic
+# graph says exactly what happens. Run:
+#   python -m runtime run examples/compound_interest.ai
+
+node 001
+op const
+type i64
+value 100
+
+node 002
+op const
+type f64
+value 1.05
+
+node 003
+op cast
+input 001
+output f64
+
+node 004
+op multiply
+input 003 002
+output f64
+
+node 005
+op multiply
+input 004 004
+output f64
+
+node 006
+op multiply
+input 005 005
+output f64
+
+node 007
+op multiply
+input 006 006
+output f64
+
+node 008
+op multiply
+input 007 004
+output f64
+
+node 009
+op multiply
+input 008 004
+output f64
+
+node 010
+op emit
+input 009

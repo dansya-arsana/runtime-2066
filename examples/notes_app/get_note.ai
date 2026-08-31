@@ -1,0 +1,109 @@
+# get_note.ai — read a note, authenticated by session token.
+# in: session_token, note_id · out: "title :: body" | "not your note" | "no such note"
+# The caller's identity comes ONLY from session.verify (ed25519-checked,
+# expiring); a claimed user id in input is never trusted.
+
+entity note {
+id identity
+owner_id i64
+title string
+body string
+}
+
+main
+
+node 001
+op system.read
+
+node 002
+op session.verify
+input 001
+output i64
+
+node 003
+op system.read
+
+node 004
+op cast
+input 003
+output i64
+
+node 005
+op data.select
+entity note
+column owner_id
+where id
+input 004
+output i64
+
+node 006
+op const
+type i64
+value 0
+
+node 007
+op compare
+mode ne
+input 005 006
+output bool
+
+node 008
+op compare
+mode eq
+input 005 002
+output bool
+
+node 009
+op data.select
+entity note
+column title
+where id
+input 004
+output string
+
+node 010
+op data.select
+entity note
+column body
+where id
+input 004
+output string
+
+node 011
+op const
+type string
+value " :: "
+
+node 012
+op concat
+input 009 011
+output string
+
+node 013
+op concat
+input 012 010
+output string
+
+node 014
+op const
+type string
+value "not your note"
+
+node 015
+op branch
+input 008 013 014
+output string
+
+node 016
+op const
+type string
+value "no such note"
+
+node 017
+op branch
+input 007 015 016
+output string
+
+node 018
+op system.write
+input 017

@@ -1,0 +1,20 @@
+{
+ "agent_id": "agent-B",
+ "algorithm": "ed25519",
+ "base_hash": "sha256:7a3049a8d4a246f29af9b658d9a189ae1e9655aca902124fbbc8c7ecb92367c2",
+ "changes": {
+  "added": {
+   "func/double": "",
+   "func/double/301": "node 301\nop param\nindex 0\ntype i64",
+   "func/double/302": "node 302\nop add\ninput 301 301\noutput i64",
+   "func/double/303": "node 303\nop return\ninput 302"
+  },
+  "changed": {},
+  "removed": []
+ },
+ "format_version": 1,
+ "issued_at": "2026-08-30T23:54:35+00:00",
+ "program_hash": "sha256:500a5c338302edd0ec040f0bfcf7a5e677982b11d8541f8f992467a9d70e11e8",
+ "public_key": "7fa2966a2b533ae1dc56c6a7aa27694e9fc339c2806e1b44e08c3680af30584a",
+ "signature": "cc2d5f067b29bf442b852618e528842e5ab5073d73e6d97863bb8e1d6ed1880b054b0771506031c0f2cfead0d50478eb22a157ffe9e64bbcd5964dd2e63e1d0b"
+}

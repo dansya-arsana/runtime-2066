@@ -1,0 +1,57 @@
+# First Public Demo with the deliberate §81 error injection: node 002 was
+# authored as a string instead of an f64. The validator rejects the program
+# with a structured E203; the mechanical repair loop inserts
+#   cast node 002 -> f64
+# and the repaired program executes identically to compound_interest.ai.
+#
+#   python -m runtime repair examples/compound_interest_error.ai > fixed.ai
+#   python -m runtime run fixed.ai
+
+node 001
+op const
+type i64
+value 100
+
+node 002
+op const
+type string
+value "1.05"
+
+node 003
+op cast
+input 001
+output f64
+
+node 004
+op multiply
+input 003 002
+output f64
+
+node 005
+op multiply
+input 004 004
+output f64
+
+node 006
+op multiply
+input 005 005
+output f64
+
+node 007
+op multiply
+input 006 006
+output f64
+
+node 008
+op multiply
+input 007 004
+output f64
+
+node 009
+op multiply
+input 008 004
+output f64
+
+node 010
+op emit
+input 009

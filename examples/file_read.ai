@@ -1,0 +1,21 @@
+# §82 beat 1: a scoped capability allows reading INSIDE examples/incoming.
+# The grant set is runtime-held; the program can only name a path.
+#
+#   python -m runtime run examples/file_read.ai --caps examples/caps_demo.json
+#   -> The runtime decides — not the model.
+#
+# Without --caps the same program is denied (default deny, roadmap §20).
+
+node 001
+op const
+type string
+value "examples/incoming/note.txt"
+
+node 002
+op filesystem.read
+input 001
+output string
+
+node 003
+op emit
+input 002

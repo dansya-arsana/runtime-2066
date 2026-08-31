@@ -1,0 +1,11 @@
+{
+  "subject": "agent-A91",
+  "grants": [
+    {
+      "id": "out-write",
+      "action": "filesystem.write",
+      "resource": "examples/out",
+      "max_bytes": 65536
+    }
+  ]
+}

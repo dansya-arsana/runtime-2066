@@ -1,0 +1,18 @@
+# Never bake keys, databases, or local state into images
+.git
+.key
+*.key
+.2066key/
+*.db
+*.sqlite*
+secret.enc
+attempts
+__pycache__
+*.pyc
+dist
+build
+*.egg-info
+.venv
+venv
+.audit
+.audit/

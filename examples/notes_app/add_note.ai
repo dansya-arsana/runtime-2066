@@ -1,0 +1,50 @@
+# add_note.ai — insert a note for the session token's subject.
+# in: session_token, title, body · out: "ok:<id>"
+
+entity note {
+id identity
+owner_id i64
+title string
+body string
+}
+
+main
+
+node 001
+op system.read
+
+node 002
+op session.verify
+input 001
+output i64
+
+node 003
+op system.read
+
+node 004
+op system.read
+
+node 005
+op data.insert
+entity note
+input 002 003 004
+output i64
+
+node 006
+op cast
+input 005
+output string
+
+node 007
+op const
+type string
+value "ok:"
+
+node 008
+op concat
+input 007 006
+output string
+
+node 009
+op system.write
+input 008

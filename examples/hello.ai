@@ -1,0 +1,11 @@
+# 2066 hello world (roadmap §78 examples/hello.ai)
+# Direct semantic execution: no JavaScript, Python, Rust, or shell is generated.
+
+node 001
+op const
+type string
+value "Hello, World!"
+
+node 002
+op emit
+input 001

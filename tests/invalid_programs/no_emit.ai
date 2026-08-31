@@ -1,0 +1,4 @@
+node 001
+op const
+type i64
+value 1

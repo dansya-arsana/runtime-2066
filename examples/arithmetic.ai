@@ -1,0 +1,21 @@
+# First Proof of Concept (roadmap §12): take 10, multiply by 5, return the result.
+# Run: python -m runtime run examples/arithmetic.ai   ->   50
+
+node 001
+op const
+type i64
+value 10
+
+node 002
+op const
+type i64
+value 5
+
+node 003
+op multiply
+input 001 002
+output i64
+
+node 004
+op emit
+input 003

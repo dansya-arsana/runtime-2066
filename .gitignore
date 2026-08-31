@@ -1,0 +1,32 @@
+# ---- PRIVATE KEY MATERIAL: never commit ----
+# Regenerate with: python -m runtime keygen <identity.json> [--id <name>]
+*.key
+.2066key/
+*.pem
+secret.enc
+attempts
+rotation.log
+
+# Session registries / revocation lists (hold live tokens)
+*session_registry.json
+*session_revocations.jsonl
+.evidence/
+.economy/
+
+# Databases (user data, password hashes)
+*.db
+*.sqlite
+*.sqlite3
+
+# ---- Build artifacts ----
+__pycache__/
+*.pyc
+dist/
+build/
+*.egg-info/
+.venv/
+venv/
+
+# ---- OS / editor noise ----
+.DS_Store
+Thumbs.db

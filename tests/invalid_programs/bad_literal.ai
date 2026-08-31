@@ -1,0 +1,8 @@
+node 001
+op const
+type i64
+value abc
+
+node 002
+op emit
+input 001

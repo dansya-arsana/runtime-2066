@@ -1,0 +1,39 @@
+# goal: convert 100 F to C
+node 001
+op const
+type f64
+value 100.0
+
+node 002
+op const
+type f64
+value 32.0
+
+node 003
+op subtract
+input 001 002
+output f64
+
+node 004
+op const
+type f64
+value 5.0
+
+node 005
+op const
+type f64
+value 9.0
+
+node 006
+op divide
+input 004 005
+output f64
+
+node 007
+op multiply
+input 003 006
+output f64
+
+node 008
+op emit
+input 007

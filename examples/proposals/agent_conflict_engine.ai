@@ -1,0 +1,51 @@
+func square
+node 101
+op param
+index 0
+type i64
+
+node 102
+op multiply
+input 101 101
+output i64
+
+node 103
+op return
+input 102
+
+func negate
+node 201
+op param
+index 0
+type i64
+
+node 202
+op const
+type i64
+value 100
+
+node 203
+op subtract
+input 202 201
+output i64
+
+node 204
+op return
+input 203
+
+main
+
+node 001
+op const
+type i64
+value 6
+
+node 002
+op call
+callee square
+input 001
+output i64
+
+node 003
+op emit
+input 002

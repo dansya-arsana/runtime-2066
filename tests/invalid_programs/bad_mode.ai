@@ -1,0 +1,19 @@
+node 001
+op const
+type i64
+value 2
+
+node 002
+op const
+type i64
+value 3
+
+node 003
+op compare
+mode flows
+input 001 002
+output bool
+
+node 004
+op emit
+input 003

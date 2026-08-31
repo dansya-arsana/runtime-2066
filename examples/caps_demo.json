@@ -1,0 +1,12 @@
+{
+  "subject": "agent-A91",
+  "grants": [
+    {
+      "id": "incoming-read",
+      "action": "filesystem.read",
+      "resource": "examples/incoming",
+      "max_bytes": 65536,
+      "expires": "2036-01-01T00:00:00Z"
+    }
+  ]
+}

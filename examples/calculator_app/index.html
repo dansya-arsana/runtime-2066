@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2066 Calculator</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="shell">
+  <section class="calculator" aria-label="2066 calculator">
+    <header class="brand">
+      <span class="badge">2066</span>
+      <span class="brand-text">
+        <strong>Calculator</strong>
+        <span>engine compiled from a semantic program</span>
+      </span>
+    </header>
+
+    <output class="display" aria-live="polite">
+      <div class="expression" id="expression">&nbsp;</div>
+      <div class="reading" id="reading">0</div>
+    </output>
+
+    <div class="keys" role="group" aria-label="calculator keys">
+      <button class="key key--fn" data-action="clear" aria-label="clear all">C</button>
+      <button class="key key--fn" data-action="backspace" aria-label="delete last digit">⌫</button>
+      <button class="key key--fn" data-action="percent" aria-label="percent">%</button>
+      <button class="key key--op" data-op="/" aria-label="divide">÷</button>
+
+      <button class="key" data-digit="7">7</button>
+      <button class="key" data-digit="8">8</button>
+      <button class="key" data-digit="9">9</button>
+      <button class="key key--op" data-op="*" aria-label="multiply">×</button>
+
+      <button class="key" data-digit="4">4</button>
+      <button class="key" data-digit="5">5</button>
+      <button class="key" data-digit="6">6</button>
+      <button class="key key--op" data-op="-" aria-label="subtract">−</button>
+
+      <button class="key" data-digit="1">1</button>
+      <button class="key" data-digit="2">2</button>
+      <button class="key" data-digit="3">3</button>
+      <button class="key key--op" data-op="+" aria-label="add">+</button>
+
+      <button class="key key--fn" data-action="negate" aria-label="toggle sign">±</button>
+      <button class="key" data-digit="0">0</button>
+      <button class="key" data-action="decimal" aria-label="decimal point">.</button>
+      <button class="key key--eq" data-action="equals" aria-label="equals">=</button>
+    </div>
+
+    <footer class="colophon">
+      math engine: <code>engine.js</code> — compiled from
+      <code>engine.ai</code> by the 2066 runtime · no calculator logic was
+      hand-written in JavaScript
+    </footer>
+  </section>
+
+  <p class="hint">Keyboard works: digits, <kbd>+</kbd> <kbd>-</kbd> <kbd>*</kbd> <kbd>/</kbd>,
+  <kbd>Enter</kbd> equals, <kbd>Esc</kbd> clear, <kbd>⌫</kbd> delete.</p>
+</main>
+
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

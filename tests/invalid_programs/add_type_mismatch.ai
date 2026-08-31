@@ -1,0 +1,18 @@
+node 001
+op const
+type i64
+value 10
+
+node 002
+op const
+type string
+value "5"
+
+node 003
+op add
+input 001 002
+output i64
+
+node 004
+op emit
+input 003

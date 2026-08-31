@@ -1,0 +1,10 @@
+{
+  "subject": "notes-app",
+  "grants": [
+    {"action": "data.read", "resource": "user"},
+    {"action": "data.write", "resource": "user"},
+    {"action": "data.read", "resource": "note"},
+    {"action": "data.write", "resource": "note"},
+    {"action": "data.delete", "resource": "note"}
+  ]
+}

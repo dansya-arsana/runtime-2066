@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2066 Notes</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="shell">
+  <header class="brand">
+    <span class="badge">2066</span>
+    <div>
+      <strong>Notes</strong>
+      <span>database + auth — every logic path compiled from semantic programs</span>
+    </div>
+  </header>
+
+  <section id="auth-view" class="card">
+    <h2>Account</h2>
+    <label>username <input id="username" autocomplete="username"></label>
+    <label>password <input id="password" type="password" autocomplete="current-password"></label>
+    <div class="row">
+      <button id="register">Register</button>
+      <button id="login" class="primary">Log in</button>
+    </div>
+    <p id="auth-message" class="message" aria-live="polite"></p>
+  </section>
+
+  <section id="app-view" class="card" hidden>
+    <h2>Notes <span id="who" class="who"></span></h2>
+    <label>title <input id="title"></label>
+    <label>body <textarea id="body" rows="3"></textarea></label>
+    <div class="row">
+      <button id="add" class="primary">Add note</button>
+      <button id="logout">Log out</button>
+    </div>
+    <label>note id <input id="note-id" type="number" min="1" value="1"></label>
+    <div class="row">
+      <button id="fetch">Read note</button>
+      <button id="list">List my notes</button>
+    </div>
+    <p id="note-view" class="note-view" aria-live="polite"></p>
+  </section>
+
+  <footer class="colophon">
+    register / login / notes — each path is a <code>.ai</code> program executed
+    by the 2066 runtime (SQLite + capability grants). This page and server own
+    no business logic.
+  </footer>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

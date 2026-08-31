@@ -1,0 +1,81 @@
+# 2066 is not limited to text output: this program computes 12 × 3.5 in the
+# semantic graph, assembles a complete HTML document with embedded CSS via
+# concat chains, and writes it through the capability-gated filesystem.write.
+#
+#   python -m runtime run examples/calculator_page.ai --caps examples/caps_write.json
+#   -> 332  (bytes written)
+#   then open examples/out/calculator.html in a browser.
+
+node 001
+op const
+type f64
+value 12.0
+
+node 002
+op const
+type f64
+value 3.5
+
+node 003
+op multiply
+input 001 002
+output f64
+
+node 004
+op cast
+input 003
+output string
+
+node 005
+op const
+type string
+value "<html><head><style>body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#101018;font-family:sans-serif}.card{background:#1c1c2a;padding:48px 72px;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.6);text-align:center}.op{color:#8ab4ff;font-size:22px;letter-spacing:2px}.result{margin-top:12px;font-size:72px;font-weight:700;color:#7ce38b}.note{color:#666;margin-top:18px;font-size:13px}</style><title>2066</title></head><body><div class=\"card\"><div class=\"op\">"
+
+node 006
+op const
+type string
+value "12 × 3.5"
+
+node 007
+op const
+type string
+value "</div><div class=\"result\">"
+
+node 008
+op const
+type string
+value "</div><div class=\"note\">computed by a 2066 semantic program — no conventional language was authored</div></div></body></html>"
+
+node 009
+op concat
+input 005 006
+output string
+
+node 010
+op concat
+input 009 007
+output string
+
+node 011
+op concat
+input 010 004
+output string
+
+node 012
+op concat
+input 011 008
+output string
+
+node 013
+op const
+type string
+value "examples/out/calculator.html"
+
+node 014
+op filesystem.write
+input 013 012
+output i64
+
+node 015
+op emit
+input 014

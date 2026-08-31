@@ -1,0 +1,193 @@
+# The calculation core of the 2066 calculator app, authored as a semantic
+# program. Compiled to JavaScript (library mode) for the browser UI and to
+# Python for the CLI — one semantic program, two backends (roadmap §10/§4.10).
+#
+#   python -m runtime run examples/calculator_app/engine.ai           # self-test
+#   python -m runtime export examples/calculator_app/engine.ai \
+#       --target javascript --library --out examples/calculator_app/engine.js
+#   python -m runtime export examples/calculator_app/engine.ai --target python
+#
+# calculate(a, b, op) returns a canonical display string; division by zero
+# and unknown operators return readable errors instead of crashing.
+
+func calculate
+node 101
+op param
+index 0
+type f64
+
+node 102
+op param
+index 1
+type f64
+
+node 103
+op param
+index 2
+type string
+
+node 104
+op add
+input 101 102
+output f64
+
+node 105
+op subtract
+input 101 102
+output f64
+
+node 106
+op multiply
+input 101 102
+output f64
+
+node 107
+op divide
+input 101 102
+output f64
+
+node 108
+op const
+type f64
+value 0.0
+
+node 109
+op compare
+mode ne
+input 102 108
+output bool
+
+node 110
+op branch
+input 109 107 108
+output f64
+
+node 111
+op const
+type string
+value "+"
+
+node 112
+op compare
+mode eq
+input 103 111
+output bool
+
+node 113
+op const
+type string
+value "-"
+
+node 114
+op compare
+mode eq
+input 103 113
+output bool
+
+node 115
+op const
+type string
+value "*"
+
+node 116
+op compare
+mode eq
+input 103 115
+output bool
+
+node 117
+op const
+type string
+value "/"
+
+node 118
+op compare
+mode eq
+input 103 117
+output bool
+
+node 119
+op cast
+input 104
+output string
+
+node 120
+op cast
+input 105
+output string
+
+node 121
+op cast
+input 106
+output string
+
+node 122
+op cast
+input 110
+output string
+
+node 123
+op const
+type string
+value "Cannot divide by zero"
+
+node 124
+op const
+type string
+value "Unsupported operator"
+
+node 125
+op branch
+input 109 122 123
+output string
+
+node 126
+op branch
+input 118 125 124
+output string
+
+node 127
+op branch
+input 116 121 126
+output string
+
+node 128
+op branch
+input 114 120 127
+output string
+
+node 129
+op branch
+input 112 119 128
+output string
+
+node 130
+op return
+input 129
+
+main
+
+node 001
+op const
+type f64
+value 6.0
+
+node 002
+op const
+type f64
+value 7.0
+
+node 003
+op const
+type string
+value "*"
+
+node 004
+op call
+callee calculate
+input 001 002 003
+output string
+
+node 005
+op system.write
+input 004

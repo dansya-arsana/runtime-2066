@@ -1,0 +1,22 @@
+{
+ "agent_id": "agent-A",
+ "algorithm": "ed25519",
+ "base_hash": "sha256:7a3049a8d4a246f29af9b658d9a189ae1e9655aca902124fbbc8c7ecb92367c2",
+ "changes": {
+  "added": {
+   "func/negate": "",
+   "func/negate/201": "node 201\nop param\nindex 0\ntype i64",
+   "func/negate/202": "node 202\nop const\ntype i64\nvalue 0",
+   "func/negate/203": "node 203\nop subtract\ninput 202 201\noutput i64",
+   "func/negate/204": "node 204\nop return\ninput 203",
+   "main/999": "node 999\nop const\ntype i64\nvalue 1"
+  },
+  "changed": {},
+  "removed": []
+ },
+ "format_version": 1,
+ "issued_at": "2026-08-30T23:54:35+00:00",
+ "program_hash": "sha256:7a5fa9c9119f90017b12a3ad7759576cd5d25c232f1e8cf39f8c121be82693ab",
+ "public_key": "5401623d7fab1048606bfbc2480b106e01df7c989d2835f88c766e3510021f50",
+ "signature": "1b936765a20080f1be58fc524255e044b648e9aa979437b365abb3ff925b094af01af294c7b2bcf9d56a8543b8075d26633469be4abac3373b6ea6ac3fe5ff05"
+}

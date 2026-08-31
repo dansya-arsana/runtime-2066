@@ -1,0 +1,21 @@
+# §82 beats 2+3: same grant set as file_read.ai, but this program reaches
+# OUTSIDE its scope (examples/README.md exists — the grant just doesn't
+# cover it). The runtime denies with E401 and exits 4; there is no
+# operation in the instruction set that can widen or mint authority.
+#
+#   python -m runtime run examples/capability_escape.ai --caps examples/caps_demo.json
+#   -> ERROR E401 ... (exit code 4)
+
+node 001
+op const
+type string
+value "examples/README.md"
+
+node 002
+op filesystem.read
+input 001
+output string
+
+node 003
+op emit
+input 002

@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "runtime-2066"
+version = "1.4.1"
+description = "AI-native semantic execution runtime — deterministic programs, capability-gated authority, verified agents"
+readme = "README.md"
+license = {text = "AGPL-3.0-only"}
+authors = [{name = "2066 Contributors"}]
+requires-python = ">=3.12"
+dependencies = [
+    "cryptography>=42.0",
+]
+keywords = [
+    "ai-native",
+    "semantic-runtime",
+    "capability-security",
+    "agent-authorization",
+    "deterministic-execution",
+    "verified-programs",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Interpreters",
+    "Topic :: Security",
+    "Topic :: System :: Distributed Computing",
+]
+
+[project.urls]
+Homepage = "https://github.com/dansya-arsana/runtime-2066"
+Documentation = "https://github.com/dansya-arsana/runtime-2066/tree/main/docs"
+Whitepaper = "https://github.com/dansya-arsana/runtime-2066/blob/main/WHITEPAPER.md"
+
+[project.scripts]
+2066 = "runtime.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["runtime*"]
+
+[tool.setuptools.package-data]
+runtime = ["py.typed"]
