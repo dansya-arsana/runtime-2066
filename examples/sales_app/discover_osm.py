@@ -47,8 +47,8 @@ def discover(city: str, category: str, limit: int) -> list[dict]:
     tag, values = CATEGORIES[category]
     regex = "|".join(values)
     query = f"""
-[out][timeout:25];
-area["name"="{city}"]["boundary"="administrative"]->.a;
+[out:json][timeout:25];
+area["name"~"^{city}"]["boundary"="administrative"]->.a;
 (
   nwr["{tag}"~"^({regex})$"](area.a);
 );

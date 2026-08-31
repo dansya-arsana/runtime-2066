@@ -311,3 +311,21 @@ Genesis/wallets/robots/blockchain first").
 - [x] Standalone battery on VPS: benchmarks/standalone.py — 200x
       dual-adapter replay deterministic, check cycle 0.5ms/2000 per sec
       at 0 LLM tokens, 300 fuzzer mutants 0 unhandled crashes
+
+### M13 — Sales app: the real-app test + `when` guard (2026-08-31) — ✅ DONE
+
+- [x] Studied the real sales-machine (live OpenAPI: 75 endpoints, 23
+      modules) and rebuilt the core pipeline on 2066: businesses with
+      deterministic in-graph scoring, opportunity pipeline with the
+      stage state machine IN-GRAPH, activities, follow-ups, funnel.
+- [x] LANGUAGE FIX found by the app: `branch` is eager — denied writes
+      in untaken arms still executed. Added `when <node-ref>` guarded
+      effects to data.insert/update/delete; false guard = verified
+      no-op in BOTH adapters; guard refs ordered + type-checked.
+      (tests/runtime/test_when_guard.py)
+- [x] StructuredError.__str__ renders code+detail (was empty in traces).
+- [x] examples/sales_app/: 15 programs, server shell, dashboard UI,
+      discover_osm.py (Overpass -> verified engines).
+- [x] 338 tests green; deployed https://dev-2066sales.arsana.cloud
+      (loopback :8628, TLS edge, volumes); OSM discovery fed 5 real
+      Bandung cafes through the live pipeline.
