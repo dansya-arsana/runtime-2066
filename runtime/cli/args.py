@@ -168,7 +168,8 @@ def _parse_args(argv: list[str]):
             elif arg == "--to":
                 to_dir = value
             elif arg == "--profile":
-                if value not in ("development", "production"):
+                if value not in ("development", "production",
+                                  "sovereign"):
                     return None
                 profile = value
         elif arg.startswith("-"):
@@ -179,7 +180,10 @@ def _parse_args(argv: list[str]):
     key_path = key_paths[-1] if key_paths else None  # last-wins (legacy)
     # production profile (H4): unsigned grants are ALWAYS rejected —
     # security must not depend on remembering --require-signed
-    if profile == "production":
+    if profile in ("production", "sovereign"):
+        # sovereign = production + offline/no-telemetry
+        # deployment posture (docs/operations/
+        # DEPLOYMENT_PROFILES.md)
         require_signed = True
     return (json_mode, adapter, caps_path, now_raw, agent_path, key_path,
             out_path, require_signed, agent_id, target, library_flag, db_path,

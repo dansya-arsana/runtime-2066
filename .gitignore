@@ -30,3 +30,4 @@ venv/
 # ---- OS / editor noise ----
 .DS_Store
 Thumbs.db
+rust-canonicalizer/target/

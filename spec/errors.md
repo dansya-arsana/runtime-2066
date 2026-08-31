@@ -107,3 +107,13 @@ and `emits`/`error` to the payload.
 | 4 | authority denial (E4xx) — the program ran, the policy said no |
 
 Program output goes to stdout only; errors go to stderr only.
+
+## Namespace policy (plan SS33)
+
+Codes are protocol: changing one is a compatibility event. Current
+families: E1xx parse/canonical · E2xx typing/graph · E3xx runtime
+value · E4xx authority · E5xx data+storage+network (E501-505 storage,
+E560 transport) · E6xx proposals. The plan's finer split (E7xx storage,
+E8xx transport, E9xx evidence) is a FUTURE major-version remap with
+migration aliases — not applied now, precisely because codes are
+protocol.

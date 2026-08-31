@@ -74,7 +74,8 @@ def create_backup(out_dir: Path, sources: list[tuple[str, Path]],
             continue
         target = out_dir / rel
         target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(source, target)
+        if source.resolve() != target.resolve():
+            shutil.copyfile(source, target)
         files[rel] = _sha256(target)
     manifest = {
         "format_version": FORMAT_VERSION,

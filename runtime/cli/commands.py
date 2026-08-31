@@ -1257,3 +1257,76 @@ def _verify_release(path: str, agent_path: str | None) -> int:
     for problem in result["problems"]:
         print(f"  {problem}", file=sys.stderr)
     return 3
+
+
+def _bundle(out_dir: str, programs_root: str | None,
+            policies_root: str | None, out_path: str | None,
+            now_raw: str | None) -> int:
+    """2066 bundle <out-dir> [--programs d] [--policies d]
+    [--out release.json] -- SBOM written alongside when possible."""
+    import pathlib
+    from runtime.bundle import pack_bundle
+    from runtime.sbom import build_sbom, render_sbom
+    from runtime.capabilities import parse_timestamp
+    now = parse_timestamp(now_raw) if now_raw else None
+    try:
+        sbom_path = pathlib.Path(out_dir) / "sbom.json"
+        sbom_path.parent.mkdir(parents=True, exist_ok=True)
+        sbom_path.write_text(
+            render_sbom(build_sbom(now=now)), encoding="utf-8")
+        pack_bundle(pathlib.Path(out_dir),
+                    pathlib.Path(programs_root or
+                                 pathlib.Path(".").resolve() / "programs"),
+                    pathlib.Path(policies_root or
+                                 pathlib.Path(".").resolve() / "policies"),
+                    release_path=out_path,
+                    sbom_path=sbom_path if sbom_path.exists() else None,
+                    now=now)
+    except (OSError, ValueError) as exc:
+        print(f"error: bundle failed: {exc}", file=sys.stderr)
+        return 3
+    print(f"offline bundle written to {out_dir} "
+          "(programs + policies + sbom"
+          + (" + signed release)" if out_path else ")"))
+    return 0
+
+
+def _verify_bundle(path: str, agent_path: str | None) -> int:
+    """2066 verify-bundle <dir> [--agent id.json] — signature + hashes."""
+    import pathlib
+    from runtime.bundle import verify_bundle
+    result = verify_bundle(pathlib.Path(path), agent_path)
+    if result["ok"]:
+        print(f"OK: bundle verifies ({result['files']} files, release "
+              f"signature "
+              f"{'verified' if result['release'].get('verified') else 'absent'})")
+        return 0
+    print("BUNDLE REJECTED:", file=sys.stderr)
+    for problem in result["problems"]:
+        print(f"  {problem}", file=sys.stderr)
+    return 3
+
+
+def _install_bundle(path: str, agent_path: str | None,
+                    to_dir: str | None, out_path: str | None) -> int:
+    """2066 install-bundle <dir> --to <root> [--agent id.json]
+    [--out evidence.jsonl] — verify, install, record evidence."""
+    import pathlib
+    from runtime.bundle import install_bundle
+    if not to_dir:
+        print("error: install-bundle needs --to <repository root>",
+              file=sys.stderr)
+        return 3
+    root = pathlib.Path(to_dir)
+    result = install_bundle(pathlib.Path(path), root / "programs",
+                            root / "policies", out_path, agent_path)
+    if not result.get("installed"):
+        print("REFUSING to install:", file=sys.stderr)
+        for problem in result["problems"]:
+            print(f"  {problem}", file=sys.stderr)
+        return 3
+    counts = result["counts"]
+    print(f"installed: {counts['programs']} program file(s), "
+          f"{counts['policies']} policy file(s)"
+          + ("; evidence recorded" if out_path else ""))
+    return 0

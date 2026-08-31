@@ -1,0 +1,16 @@
+[package]
+name = "canonicalizer"
+version = "0.1.0"
+edition = "2021"
+
+# H8 spike (plan SS36 strangler step 3): an INDEPENDENT implementation
+# of canonical serialization + program hashing, written from the
+# normative spec (spec/canonicalization.md) — deliberately no shared
+# code with the Python runtime. Zero dependencies.
+
+[[bin]]
+name = "canonicalize"
+path = "src/main.rs"
+
+[profile.release]
+strip = true

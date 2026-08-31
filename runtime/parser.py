@@ -146,6 +146,32 @@ def parse_source(source: str) -> Program:
                 )
             continue
 
+        if head == "protocol":
+            # optional protocol compatibility range (plan SS30): the
+            # program states the protocol semver it targets; a runtime
+            # whose PROTOCOL_VERSION is outside [declared, next-major)
+            # refuses to run it — never silently misinterpret it.
+            declared = rest.strip()
+            from . import PROTOCOL_VERSION
+            try:
+                major, minor = (int(x) for x in declared.split(".", 1))
+                rt_major, rt_minor = (int(x)
+                                      for x in PROTOCOL_VERSION.split(".", 1))
+            except ValueError:
+                raise StructuredError(
+                    code="E109", line=lineno,
+                    detail=f"protocol range must be '<major>.<minor>' "
+                           f"(e.g. '0.2'), received {declared!r}",
+                ) from None
+            if (major, minor) > (rt_major, rt_minor) or major != rt_major:
+                raise StructuredError(
+                    code="E109", line=lineno,
+                    detail=f"program requires protocol {declared} but "
+                           f"this runtime implements {PROTOCOL_VERSION} "
+                           f"— refusing (never silently misinterpret)",
+                )
+            continue
+
         if head == "entity" and ("{" in rest or current_node is None):
             # header form: `entity name {`. Inside an open node block the
             # brace-less form is the data-op field `entity <name>`.

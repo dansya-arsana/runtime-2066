@@ -109,7 +109,6 @@ class SessionVerifier:
         body_b64, signature_hex = token.split(".")
         try:
             body = _b64decode(body_b64)
-            import json
             payload = json.loads(body.decode("utf-8"))
             subject = int(payload["subject_id"])
             expires_raw = payload["expires"]

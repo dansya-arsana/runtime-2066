@@ -77,3 +77,10 @@ Rules (fail closed):
 shipped program, packaged or example. The suite fails on any drift and
 on any unlisted program. Re-freezing is a deliberate, reviewed act —
 never a side effect of refactoring.
+
+## 6. Resource identity (plan SS47)
+
+Semantic identity is location-free: a resource is
+`<package>::<entity>::<row>` (e.g. `sales::business::12`), never a URL
+or path. Transports (LAN/Tor/offline, M10+) resolve WHERE a resource is
+reachable; they can never change WHAT it is (ADR-006).

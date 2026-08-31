@@ -21,13 +21,14 @@ RUNTIME_DIR = ROOT / "runtime"
 # the semantic kernel (functional core): decides, never touches
 CORE_MODULES = {
     "errors", "types", "parser", "serialize", "hashing", "validator",
-    "airef", "packages",
+    "airef", "packages", "ports",   # contracts (SS13): typing only
 }
 
 # adapter/shell modules inside the runtime package: perform effects the
 # core authorized (storage, fs, identity, sessions, evidence files)
 ADAPTER_MODULES = {
-    "data", "fsops", "identity", "session", "evidence", "revocation",
+    "data", "memory_store", "fsops", "identity", "session", "evidence",
+    "revocation",
     "keydisk", "multisig", "delegation", "pinning", "reputation",
     "proposals", "redteam", "fuzzer",
 }
@@ -94,7 +95,7 @@ class TestBoundaries(unittest.TestCase):
             "repair", "capabilities",
             # release-engineering tooling (SS26/SS28/SS60): sbom,
             # signed releases, backup — shell-side, import core inward
-            "sbom", "release", "backup",
+            "sbom", "release", "backup", "bundle",
             # app shell shipped INSIDE the package so pip installs get
             # the 2066-mcp entry point with bundled tool programs
             # (runtime/programs/); imports inward only. Documented

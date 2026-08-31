@@ -358,3 +358,33 @@ Genesis/wallets/robots/blockchain first").
       (tools/release/REPRODUCIBILITY.md)
 - [x] §29 protocol version 0.2 separated from runtime version
 - [ ] H8 Rust core; H9 FIDO2 — sequenced per plan §93–§94
+
+### H-cycle whole-plan completion pass (2026-08-31, late)
+
+§102 Definition of Done — hardening cycle, item by item:
+
+- [x] repository organized by architecture (BOUNDARIES.md + tests)
+- [x] no loose production .ai programs in root
+- [x] package/module/unit hierarchy (spec/packages.md)
+- [x] semantic inspect command (`inspect` + `context`)
+- [x] core dependencies point inward only (import-analysis test)
+- [x] production profile exists (+ sovereign)
+- [x] signed grants mandatory in production/sovereign (tested)
+- [x] reference application useful offline (local runtime/db/UI)
+- [x] backup/restore tested (`2066 backup`/`restore`, fail-closed)
+- [x] tests organized: parser/runtime/determinism/conformance/
+      architecture/property/fuzz/security/adversarial/differential/
+      independent
+- [x] parser/canonicalizer/grant/envelope/proposal/evidence/manifest
+      fuzzing (H6 campaign)
+- [x] dependency manifest (DEPENDENCIES.md, §25 fields)
+- [x] SBOM generation (`2066 sbom`, SPDX 2.3)
+- [x] release signing (`2066 release`/`verify-release`) + reproducible
+      wheel (pinned SOURCE_DATE_EPOCH) + offline update bundles
+- [x] threat model updated (versioned note)
+- [x] no hard dependency on cloud/vendor
+- [x] H8 STARTED: independent Rust canonicalizer — 28/28 corpus hashes
+      identical cross-implementation (strangler steps 1-4 of SS36)
+- [ ] H8 remainder: validator + semantics + capability verifier in
+      Rust; H9 FIDO2 (needs hardware); §68 model-independence study
+      (needs multiple live models) — next cycle

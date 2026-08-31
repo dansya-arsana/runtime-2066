@@ -62,6 +62,7 @@ from runtime.cli.commands import (  # noqa: F401
     _list_packages, _merge, _migrate,
     _propose, _redteam, _repair, _reputation, _revoke, _runtime_digest,
     _backup, _restore, _sbom, _release, _verify_release,
+    _bundle, _verify_bundle, _install_bundle,
     _sign_caps, _verify_caps, _verify_proposal)
 from runtime.cli.usage import USAGE
 
@@ -125,8 +126,9 @@ def main(argv: list[str] | None = None) -> int:
                "key-format", "key-inspect", "merge", "verify-proposal",
                "evidence", "export", "check", "reputation", "redteam",
                "delegate", "chain", "key-rotate", "revoke",
-               "list", "inspect", "backup", "restore", "sbom",
-               "release", "verify-release")
+               "list", "inspect", "context", "backup", "restore", "sbom",
+               "release", "verify-release", "bundle", "verify-bundle",
+               "install-bundle")
     if len(args) == 1 and args[0] in ONE_ARG:
         command, path = args[0], None
     elif len(args) == 2 and args[0] in TWO_ARG:
@@ -189,6 +191,8 @@ def main(argv: list[str] | None = None) -> int:
         return _list_packages(path, json_mode)
     if command == "inspect":
         return _inspect_unit(path, json_mode)
+    if command == "context":           # SS16: machine-shaped inspect
+        return _inspect_unit(path, json_mode=True)
     if command == "backup":
         return _backup(path, db_path, evidence_path, programs_root,
                        policies_root, now_raw)
@@ -200,6 +204,13 @@ def main(argv: list[str] | None = None) -> int:
         return _release(out_path, agent_path, key_path, now_raw)
     if command == "verify-release":
         return _verify_release(path, agent_path)
+    if command == "bundle":
+        return _bundle(path, programs_root, policies_root, out_path,
+                       now_raw)
+    if command == "verify-bundle":
+        return _verify_bundle(path, agent_path)
+    if command == "install-bundle":
+        return _install_bundle(path, agent_path, to_dir, out_path)
 
     try:
         source = pathlib.Path(path).read_text(encoding="utf-8")
