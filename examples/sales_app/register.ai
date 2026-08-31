@@ -1,0 +1,106 @@
+entity user {
+id identity
+username string
+password_hash string
+}
+
+# register.ai — create a user with a salted password digest.
+# in: username, password (stdin lines) · out: "ok:<id>" or "username taken"
+
+main
+
+node 001
+op system.read
+
+node 002
+op system.read
+
+node 003
+op const
+type string
+value "2066:"
+
+node 004
+op concat
+input 003 001
+output string
+
+node 005
+op crypto.digest
+algorithm sha256
+input 004
+output string
+
+node 006
+op const
+type string
+value ":"
+
+node 007
+op concat
+input 005 006
+output string
+
+node 008
+op concat
+input 007 002
+output string
+
+node 009
+op crypto.digest
+algorithm sha256
+input 008
+output string
+
+node 010
+op data.count
+entity user
+where username
+input 001
+output i64
+
+node 011
+op const
+type i64
+value 0
+
+node 012
+op compare
+mode gt
+input 010 011
+output bool
+
+node 013
+op data.insert
+entity user
+input 001 009
+output i64
+
+node 014
+op cast
+input 013
+output string
+
+node 015
+op const
+type string
+value "ok:"
+
+node 016
+op concat
+input 015 014
+output string
+
+node 017
+op const
+type string
+value "username taken"
+
+node 018
+op branch
+input 012 017 016
+output string
+
+node 019
+op system.write
+input 018

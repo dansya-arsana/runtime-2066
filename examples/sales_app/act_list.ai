@@ -1,0 +1,69 @@
+# act_list.ai — the caller's activities as 2 lines: types, notes.
+
+entity activity {
+id identity
+owner_id i64
+business_id i64
+type string
+notes string
+}
+
+main
+
+node 001
+op system.read
+
+node 002
+op session.verify
+input 001
+output i64
+
+node 003
+op const
+type string
+value ","
+
+node 004
+op data.list
+entity activity
+column type
+where owner_id
+input 002
+output list<string>
+
+node 005
+op data.list
+entity activity
+column notes
+where owner_id
+input 002
+output list<string>
+
+node 006
+op const
+type string
+value "\n"
+
+node 007
+op list.join
+input 004 003
+output string
+
+node 008
+op list.join
+input 005 003
+output string
+
+node 009
+op concat
+input 007 006
+output string
+
+node 010
+op concat
+input 009 008
+output string
+
+node 011
+op system.write
+input 010

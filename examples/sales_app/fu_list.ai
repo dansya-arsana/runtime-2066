@@ -1,0 +1,94 @@
+# fu_list.ai — the caller's follow-ups as 3 lines: actions, due dates,
+# statuses.
+
+entity followup {
+id identity
+owner_id i64
+business_id i64
+action string
+due_date string
+status string
+}
+
+main
+
+node 001
+op system.read
+
+node 002
+op session.verify
+input 001
+output i64
+
+node 003
+op const
+type string
+value ","
+
+node 004
+op data.list
+entity followup
+column action
+where owner_id
+input 002
+output list<string>
+
+node 005
+op data.list
+entity followup
+column due_date
+where owner_id
+input 002
+output list<string>
+
+node 006
+op data.list
+entity followup
+column status
+where owner_id
+input 002
+output list<string>
+
+node 007
+op const
+type string
+value "\n"
+
+node 008
+op list.join
+input 004 003
+output string
+
+node 009
+op list.join
+input 005 003
+output string
+
+node 010
+op list.join
+input 006 003
+output string
+
+node 011
+op concat
+input 008 007
+output string
+
+node 012
+op concat
+input 011 009
+output string
+
+node 013
+op concat
+input 012 007
+output string
+
+node 014
+op concat
+input 013 010
+output string
+
+node 015
+op system.write
+input 014

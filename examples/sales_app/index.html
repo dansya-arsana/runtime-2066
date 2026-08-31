@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2066 Sales</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>2066 <span>Sales</span></h1>
+  <div class="tagline">every write is a verified .ai program — denied = no-op</div>
+  <div id="who" class="who"></div>
+</header>
+
+<section id="auth" class="card">
+  <h2>Sign in</h2>
+  <div class="row">
+    <input id="username" placeholder="username" autocomplete="username">
+    <input id="password" type="password" placeholder="password" autocomplete="current-password">
+  </div>
+  <div class="row">
+    <button onclick="register()">Register</button>
+    <button class="primary" onclick="login()">Login</button>
+  </div>
+  <div id="auth-msg" class="msg"></div>
+</section>
+
+<main id="app" hidden>
+  <section class="card">
+    <h2>Funnel</h2>
+    <div id="funnel" class="funnel"></div>
+  </section>
+
+  <section class="card">
+    <h2>Discover / add business</h2>
+    <div class="row">
+      <input id="b-name" placeholder="name">
+      <input id="b-cat" placeholder="category (cafe, workshop...)" style="flex:1.4">
+      <input id="b-city" placeholder="city">
+    </div>
+    <div class="row">
+      <input id="b-phone" placeholder="phone (optional)">
+      <input id="b-web" placeholder="website (optional)">
+      <select id="b-tier">
+        <option value="1">tier 1 — small</option>
+        <option value="2" selected>tier 2 — medium</option>
+        <option value="3">tier 3 — large</option>
+      </select>
+      <button class="primary" onclick="addBusiness()">Add</button>
+    </div>
+    <div class="hint">score = tier×30 + website×20 + phone×10 — computed in the graph, deterministic</div>
+    <table id="biz-table"><thead><tr>
+      <th>id</th><th>name</th><th>city</th><th>category</th>
+      <th>score</th><th>stage</th><th></th>
+    </tr></thead><tbody></tbody></table>
+  </section>
+
+  <section class="card">
+    <h2>Opportunities</h2>
+    <div class="row">
+      <input id="o-bid" placeholder="business id" style="max-width:110px">
+      <input id="o-title" placeholder="title">
+      <input id="o-need" placeholder="need" style="flex:1.4">
+      <input id="o-value" placeholder="value" style="max-width:90px">
+      <input id="o-action" placeholder="next action" style="flex:1.2">
+      <button class="primary" onclick="addOpp()">Add</button>
+    </div>
+    <table id="opp-table"><thead><tr>
+      <th>id</th><th>title</th><th>stage</th><th>value</th>
+      <th>next action</th><th>advance</th>
+    </tr></thead><tbody></tbody></table>
+    <div class="hint">state machine lives in opp_stage.ai: new → qualified → proposal → won|lost (terminal), owner-only, from-stage must match</div>
+  </section>
+
+  <section class="card">
+    <h2>Activity &amp; follow-ups</h2>
+    <div class="row">
+      <input id="a-bid" placeholder="business id" style="max-width:110px">
+      <input id="a-type" placeholder="type (call, visit...)">
+      <input id="a-notes" placeholder="notes" style="flex:2">
+      <button onclick="addActivity()">Log activity</button>
+    </div>
+    <div class="row">
+      <input id="f-bid" placeholder="business id" style="max-width:110px">
+      <input id="f-action" placeholder="action" style="flex:1.4">
+      <input id="f-due" placeholder="due (2026-09-30)">
+      <button onclick="addFollowup()">Schedule follow-up</button>
+    </div>
+    <div id="acts" class="acts"></div>
+    <table id="fu-table"><thead><tr>
+      <th>action</th><th>due</th><th>status</th><th></th>
+    </tr></thead><tbody></tbody></table>
+  </section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

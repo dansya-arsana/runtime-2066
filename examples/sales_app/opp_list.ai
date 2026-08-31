@@ -1,0 +1,98 @@
+# opp_list.ai — the caller's opportunities as 3 newline-separated CSV
+# lines: titles, stages, next_actions. Ids/values are i64: typed lists
+# via opp_ids.ai.
+
+entity opportunity {
+id identity
+owner_id i64
+business_id i64
+title string
+need string
+stage string
+probability i64
+value i64
+next_action string
+}
+
+main
+
+node 001
+op system.read
+
+node 002
+op session.verify
+input 001
+output i64
+
+node 003
+op const
+type string
+value ","
+
+node 004
+op data.list
+entity opportunity
+column title
+where owner_id
+input 002
+output list<string>
+
+node 006
+op data.list
+entity opportunity
+column stage
+where owner_id
+input 002
+output list<string>
+
+node 008
+op data.list
+entity opportunity
+column next_action
+where owner_id
+input 002
+output list<string>
+
+node 009
+op const
+type string
+value "\n"
+
+node 011
+op list.join
+input 004 003
+output string
+
+node 012
+op list.join
+input 006 003
+output string
+
+node 014
+op list.join
+input 008 003
+output string
+
+node 016
+op concat
+input 011 009
+output string
+
+node 017
+op concat
+input 016 012
+output string
+
+node 019
+op concat
+input 017 009
+output string
+
+node 022
+op concat
+input 019 014
+output string
+
+node 023
+op system.write
+input 022

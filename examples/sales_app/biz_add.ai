@@ -1,0 +1,188 @@
+# biz_add.ai — register a business with a deterministic lead score.
+# in: session_token, name, category, city, phone, website, tier
+# out: "ok:<id>" or "error E409: duplicate business name"
+#
+# score = tier*30 + has_website*20 + has_phone*10 — computed in-graph,
+# NOT by a model: the same business always scores the same, everywhere.
+
+entity business {
+id identity
+owner_id i64
+name string
+category string
+city string
+phone string
+website string
+tier i64
+score i64
+stage string
+}
+
+main
+
+node 001
+op system.read
+
+node 002
+op session.verify
+input 001
+output i64
+
+node 003
+op system.read
+
+node 004
+op system.read
+
+node 005
+op system.read
+
+node 006
+op system.read
+
+node 007
+op system.read
+
+node 008
+op system.read
+
+node 009
+op cast
+input 008
+output i64
+
+node 010
+op const
+type string
+value ""
+
+node 011
+op compare
+mode ne
+input 006 010
+output bool
+
+node 012
+op const
+type i64
+value 1
+
+node 013
+op const
+type i64
+value 0
+
+node 014
+op branch
+input 011 012 013
+output i64
+
+node 015
+op compare
+mode ne
+input 007 010
+output bool
+
+node 016
+op branch
+input 015 012 013
+output i64
+
+node 017
+op const
+type i64
+value 30
+
+node 018
+op multiply
+input 009 017
+output i64
+
+node 019
+op const
+type i64
+value 20
+
+node 020
+op multiply
+input 016 019
+output i64
+
+node 021
+op const
+type i64
+value 10
+
+node 022
+op multiply
+input 014 021
+output i64
+
+node 023
+op add
+input 018 020
+output i64
+
+node 024
+op add
+input 023 022
+output i64
+
+node 025
+op data.count
+entity business
+where name
+input 003
+output i64
+
+node 026
+op const
+type i64
+value 0
+
+node 027
+op compare
+mode eq
+input 025 026
+output bool
+
+node 028
+op const
+type string
+value "error E409: duplicate business name"
+
+node 029
+op const
+type string
+value "new"
+
+node 030
+op data.insert
+entity business
+when 027
+input 002 003 004 005 006 007 009 024 029
+output i64
+
+node 031
+op cast
+input 030
+output string
+
+node 032
+op const
+type string
+value "ok:"
+
+node 033
+op concat
+input 032 031
+output string
+
+node 034
+op branch
+input 027 033 028
+output string
+
+node 035
+op system.write
+input 034

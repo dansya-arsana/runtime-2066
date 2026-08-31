@@ -1,0 +1,103 @@
+# fu_add.ai — schedule a follow-up on YOUR business (status starts open).
+# in: session_token, business_id, action, due_date · out: "ok:<id>" / E403
+
+entity followup {
+id identity
+owner_id i64
+business_id i64
+action string
+due_date string
+status string
+}
+
+entity business {
+id identity
+owner_id i64
+name string
+category string
+city string
+phone string
+website string
+tier i64
+score i64
+stage string
+}
+
+main
+
+node 001
+op system.read
+
+node 002
+op session.verify
+input 001
+output i64
+
+node 003
+op system.read
+
+node 004
+op cast
+input 003
+output i64
+
+node 005
+op system.read
+
+node 006
+op system.read
+
+node 007
+op data.select
+entity business
+column owner_id
+where id
+input 004
+output i64
+
+node 008
+op compare
+mode eq
+input 002 007
+output bool
+
+node 009
+op const
+type string
+value "error E403: not your business"
+
+node 010
+op const
+type string
+value "open"
+
+node 011
+op data.insert
+entity followup
+when 008
+input 002 004 005 006 010
+output i64
+
+node 012
+op cast
+input 011
+output string
+
+node 013
+op const
+type string
+value "ok:"
+
+node 014
+op concat
+input 013 012
+output string
+
+node 015
+op branch
+input 008 014 009
+output string
+
+node 016
+op system.write
+input 015

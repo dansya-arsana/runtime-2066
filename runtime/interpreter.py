@@ -63,6 +63,9 @@ class _Machine:
             node = main[node_id]
             op = node.field("op")
             inputs = [values[ref] for ref, _ in node.inputs]
+            if op in ("data.insert", "data.update", "data.delete")                     and node.has("when"):
+                # guarded effect: guard value rides in as the last input
+                inputs.append(values[node.field("when")])
             if op == "call":
                 values[node_id] = self._call(node, inputs)
             else:
@@ -96,7 +99,10 @@ class _Machine:
                 )
             return self.sessions.verify(node.id, ins[0], self.now)
         if op == "data.insert":
-            return self.db.insert(node.id, node.field("entity"), ins) \
+            if node.has("when") and ins[-1] is False:
+                return 0  # guarded write denied: no row, no effect
+            args = ins[:-1] if node.has("when") else ins
+            return self.db.insert(node.id, node.field("entity"), args) \
                 if self.db else _no_db(node.id, op)
         if op == "data.count":
             return self.db.count(node.id, node.field("entity"),
@@ -108,11 +114,15 @@ class _Machine:
                                   ins[0]) \
                 if self.db else _no_db(node.id, op)
         if op == "data.update":
+            if node.has("when") and ins[-1] is False:
+                return 0  # guarded write denied: zero rows touched
             return self.db.update(node.id, node.field("entity"),
                                   node.field("set"), ins[0],
                                   node.field("where"), ins[1]) \
                 if self.db else _no_db(node.id, op)
         if op == "data.delete":
+            if node.has("when") and ins[-1] is False:
+                return 0  # guarded delete denied: zero rows touched
             return self.db.delete(node.id, node.field("entity"),
                                   node.field("where"), ins[0]) \
                 if self.db else _no_db(node.id, op)
@@ -148,6 +158,9 @@ class _Machine:
             inner = function.nodes[node_id]
             op = inner.field("op")
             inputs = [values[ref] for ref, _ in inner.inputs]
+            if op in ("data.insert", "data.update", "data.delete")                     and inner.has("when"):
+                # guarded effect: guard value rides in as the last input
+                inputs.append(values[inner.field("when")])
             if op == "call":
                 values[node_id] = self._call(inner, inputs)
             else:

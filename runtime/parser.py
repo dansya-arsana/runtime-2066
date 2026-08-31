@@ -26,7 +26,8 @@ _COLUMN_EXTRA = ("unique",)
 # Top-level field names the grammar knows about. Op-specific admissibility
 # (which op accepts which fields) is enforced by the validator.
 _FIELD_NAMES = ("op", "type", "value", "output", "mode", "callee", "index",
-                "entity", "column", "where", "algorithm", "set", "limit")
+                "entity", "column", "where", "algorithm", "set", "limit",
+                "when")
 
 
 @dataclass

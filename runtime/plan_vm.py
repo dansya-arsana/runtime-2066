@@ -111,6 +111,9 @@ def _compile_scope(
         op = node.field("op")
         for ref, _ in node.inputs:
             instrs.append(Instr("LOAD", slot[ref], node=node_id))
+        if op in ("data.insert", "data.update", "data.delete")                 and node.has("when"):
+            instrs.append(Instr("LOAD", slot[node.field("when")],
+                                node=node_id))
 
         if op == "const":
             instrs.append(Instr(
@@ -160,6 +163,8 @@ def _compile_scope(
                     "data.delete"):
             fields = {k: node.field(k) for k in
                       ("entity", "column", "set", "where") if node.has(k)}
+            if node.has("when"):
+                fields["_when"] = True
             fields["_argc"] = len(node.inputs)
             instrs.append(Instr("DATA", (op, fields), node=node_id,
                                 out=slot[node_id]))
@@ -292,16 +297,27 @@ def _dispatch_data(vm: "_VM", op_name: str, fields: dict, node_id: str,
     db = vm.db
     if op_name == "data.insert":
         argc = fields["_argc"]
+        if "_when" in fields and stack.pop() is False:
+            if argc:
+                del stack[len(stack) - argc:]
+            return 0  # guarded write denied: no row, no effect
         args = stack[len(stack) - argc:] if argc else []
         if argc:
             del stack[len(stack) - argc:]
         return db.insert(node_id, fields["entity"], args)
     if op_name == "data.update":
+        if "_when" in fields and stack.pop() is False:
+            stack.pop(); stack.pop()
+            return 0  # guarded write denied: zero rows touched
         where_value = stack.pop()
         new_value = stack.pop()
         return db.update(node_id, fields["entity"], fields["set"], new_value,
                          fields["where"], where_value)
     value = stack.pop()
+    if op_name == "data.delete":
+        if "_when" in fields and stack.pop() is False:
+            return 0  # guarded delete denied: zero rows touched
+        return db.delete(node_id, fields["entity"], fields["where"], value)
     if op_name == "data.count":
         return db.count(node_id, fields["entity"], fields["where"], value)
     if op_name == "data.select":

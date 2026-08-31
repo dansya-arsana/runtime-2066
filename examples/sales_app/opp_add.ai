@@ -1,0 +1,149 @@
+# opp_add.ai — open an opportunity on YOUR business, value >= 0 enforced.
+# in: session_token, business_id, title, need, value, next_action
+# out: "ok:<id>" or "error E403: denied"
+
+entity opportunity {
+id identity
+owner_id i64
+business_id i64
+title string
+need string
+stage string
+probability i64
+value i64
+next_action string
+}
+
+entity business {
+id identity
+owner_id i64
+name string
+category string
+city string
+phone string
+website string
+tier i64
+score i64
+stage string
+}
+
+main
+
+node 001
+op system.read
+
+node 002
+op session.verify
+input 001
+output i64
+
+node 003
+op system.read
+
+node 004
+op cast
+input 003
+output i64
+
+node 005
+op system.read
+
+node 006
+op system.read
+
+node 007
+op system.read
+
+node 008
+op cast
+input 007
+output i64
+
+node 009
+op system.read
+
+node 010
+op data.select
+entity business
+column owner_id
+where id
+input 004
+output i64
+
+node 011
+op compare
+mode eq
+input 002 010
+output bool
+
+node 012
+op const
+type i64
+value 0
+
+node 013
+op compare
+mode le
+input 012 008
+output bool
+
+node 014
+op const
+type string
+value "error E403: denied"
+
+node 015
+op const
+type string
+value "new"
+
+node 016
+op const
+type i64
+value 30
+
+node 024
+op const
+type bool
+value false
+
+node 025
+op branch
+input 011 013 024
+output bool
+
+node 017
+op data.insert
+entity opportunity
+when 025
+input 002 004 005 006 015 016 008 009
+output i64
+
+node 018
+op cast
+input 017
+output string
+
+node 019
+op const
+type string
+value "ok:"
+
+node 020
+op concat
+input 019 018
+output string
+
+node 021
+op branch
+input 013 020 014
+output string
+
+node 022
+op branch
+input 011 021 014
+output string
+
+node 023
+op system.write
+input 022

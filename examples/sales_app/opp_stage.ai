@@ -1,0 +1,272 @@
+# opp_stage.ai — the pipeline state machine, in-graph.
+# in: session_token, opp_id, from_stage, to_stage
+# out: "ok:<rows>" or structured error
+#
+# Enforced HERE, not by the UI: only the owner may move it, from_stage
+# must equal the current stage, from must be {new, qualified, proposal}
+# (won/lost are terminal), to must be {qualified, proposal, won, lost}.
+
+entity opportunity {
+id identity
+owner_id i64
+business_id i64
+title string
+need string
+stage string
+probability i64
+value i64
+next_action string
+}
+
+main
+
+node 001
+op system.read
+
+node 002
+op session.verify
+input 001
+output i64
+
+node 003
+op system.read
+
+node 004
+op cast
+input 003
+output i64
+
+node 005
+op system.read
+
+node 006
+op system.read
+
+node 010
+op data.select
+entity opportunity
+column owner_id
+where id
+input 004
+output i64
+
+node 011
+op compare
+mode eq
+input 002 010
+output bool
+
+node 012
+op data.select
+entity opportunity
+column stage
+where id
+input 004
+output string
+
+node 013
+op compare
+mode eq
+input 012 005
+output bool
+
+node 020
+op const
+type string
+value "new"
+
+node 021
+op const
+type string
+value "qualified"
+
+node 022
+op const
+type string
+value "proposal"
+
+node 023
+op compare
+mode eq
+input 005 020
+output bool
+
+node 024
+op compare
+mode eq
+input 005 021
+output bool
+
+node 025
+op compare
+mode eq
+input 005 022
+output bool
+
+node 026
+op const
+type i64
+value 1
+
+node 027
+op const
+type i64
+value 0
+
+node 028
+op branch
+input 025 026 027
+output i64
+
+node 029
+op branch
+input 024 026 028
+output i64
+
+node 030
+op branch
+input 023 026 029
+output i64
+
+node 031
+op compare
+mode eq
+input 030 026
+output bool
+
+node 040
+op compare
+mode eq
+input 006 021
+output bool
+
+node 041
+op const
+type string
+value "won"
+
+node 042
+op const
+type string
+value "lost"
+
+node 043
+op compare
+mode eq
+input 006 041
+output bool
+
+node 044
+op compare
+mode eq
+input 006 042
+output bool
+
+node 045
+op branch
+input 044 026 027
+output i64
+
+node 046
+op branch
+input 043 026 045
+output i64
+
+node 047
+op branch
+input 040 026 046
+output i64
+
+node 048
+op compare
+mode eq
+input 047 026
+output bool
+
+node 050
+op const
+type string
+value "error E403: not your opportunity"
+
+node 051
+op const
+type string
+value "error E409: stage mismatch"
+
+node 052
+op const
+type string
+value "error E400: bad from-stage"
+
+node 053
+op const
+type string
+value "error E400: bad to-stage"
+
+node 070
+op const
+type bool
+value false
+
+node 071
+op branch
+input 011 013 070
+output bool
+
+node 072
+op branch
+input 071 031 070
+output bool
+
+node 073
+op branch
+input 072 048 070
+output bool
+
+node 054
+op data.update
+entity opportunity
+when 073
+set stage
+where id
+input 006 004
+output i64
+
+node 055
+op cast
+input 054
+output string
+
+node 056
+op const
+type string
+value "ok:"
+
+node 057
+op concat
+input 056 055
+output string
+
+node 058
+op branch
+input 048 057 053
+output string
+
+node 059
+op branch
+input 031 058 052
+output string
+
+node 060
+op branch
+input 013 059 051
+output string
+
+node 061
+op branch
+input 011 060 050
+output string
+
+node 062
+op system.write
+input 061

@@ -25,6 +25,12 @@ class StructuredError(Exception):
     received: dict[str, str] | None = None
     allowed_repairs: list[str] | None = None
 
+    def __str__(self) -> str:
+        # a bare traceback line "runtime.errors.StructuredError" helps no
+        # one; the code + detail belong in the visible trace
+        loc = f" node {self.node}" if self.node else ""
+        return f"[{self.code}]{loc}: {self.detail or 'error'}"
+
     def to_dict(self) -> dict:
         out: dict = {"code": self.code}
         for key in ("node", "operation", "line", "detail"):

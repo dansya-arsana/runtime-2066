@@ -67,11 +67,11 @@ _OPS: dict[str, OpSpec] = {
     "system.write": OpSpec("system.write", frozenset(), frozenset({"output"}), 1, False, "any"),
     "concat": OpSpec("concat", frozenset(), frozenset({"output"}), 2, True, "any"),
     "crypto.digest": OpSpec("crypto.digest", frozenset({"algorithm"}), frozenset({"output"}), 1, True, "any"),
-    "data.insert": OpSpec("data.insert", frozenset({"entity"}), frozenset({"output"}), None, True, "any"),
+    "data.insert": OpSpec("data.insert", frozenset({"entity"}), frozenset({"output", "when"}), None, True, "any"),
     "data.count": OpSpec("data.count", frozenset({"entity", "where"}), frozenset({"output"}), 1, True, "any"),
     "data.select": OpSpec("data.select", frozenset({"entity", "column", "where"}), frozenset({"output"}), 1, True, "any"),
-    "data.update": OpSpec("data.update", frozenset({"entity", "set", "where"}), frozenset({"output"}), 2, True, "any"),
-    "data.delete": OpSpec("data.delete", frozenset({"entity", "where"}), frozenset({"output"}), 1, True, "any"),
+    "data.update": OpSpec("data.update", frozenset({"entity", "set", "where"}), frozenset({"output", "when"}), 2, True, "any"),
+    "data.delete": OpSpec("data.delete", frozenset({"entity", "where"}), frozenset({"output", "when"}), 1, True, "any"),
     "session.verify": OpSpec("session.verify", frozenset(), frozenset({"output"}), 1, True, "any"),
     "data.list": OpSpec("data.list", frozenset({"entity", "column", "where"}), frozenset({"output", "limit"}), 1, True, "any"),
     "list.length": OpSpec("list.length", frozenset(), frozenset({"output"}), 1, True, "any"),
@@ -161,7 +161,10 @@ def analyze(program: Program) -> Analysis:
     }
     for scope_name, scope_nodes in scopes.items():
         for node in scope_nodes.values():
-            for ref, lineno in node.inputs:
+            refs = [ref for ref, _ in node.inputs]
+            if node.has("when"):
+                refs.append(node.field("when"))
+            for ref, lineno in [(r, None) for r in refs]:
                 if ref not in scope_nodes:
                     detail = (f"input references node {ref!r} in another scope"
                               if ref in owner else
@@ -461,7 +464,10 @@ def _topo_order(nodes: dict[str, Node]) -> list[str]:
     dependents: dict[str, list[str]] = defaultdict(list)
     indegree: dict[str, int] = {node_id: 0 for node_id in nodes}
     for node_id, node in nodes.items():
-        for ref in {r for r, _ in node.inputs}:
+        refs = {r for r, _ in node.inputs}
+        if node.has("when"):
+            refs.add(node.field("when"))  # guard evaluates before its effect
+        for ref in refs:
             indegree[node_id] += 1
             dependents[ref].append(node_id)
 
@@ -643,6 +649,18 @@ def _infer_type(
         _require_string(node, op, [1], ins)
         return "string"
     if op.startswith("data."):
+        if node.has("when"):
+            # guarded effect: the `when` field references a bool node
+            guard_ref = node.field("when")
+            if types.get(guard_ref) != "bool":
+                raise _type_error(
+                    node, op,
+                    expected={"when": "bool"},
+                    received={"when": types.get(guard_ref, "unknown")},
+                    repairs=[f"cast node {guard_ref} -> bool",
+                             f"replace node {guard_ref}"],
+                    detail="when guard must be bool",
+                )
         return _infer_data(node, op, ins, program)
     if op in ("emit", "return"):
         return ins[0]

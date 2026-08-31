@@ -1,0 +1,261 @@
+# funnel.ai — the pipeline funnel, counted in-graph.
+# in: session_token · out: 8 lines:
+# businesses, opp_new, opp_qualified, opp_proposal, opp_won, opp_lost,
+# activities, followups_open
+
+entity business {
+id identity
+owner_id i64
+name string
+category string
+city string
+phone string
+website string
+tier i64
+score i64
+stage string
+}
+
+entity opportunity {
+id identity
+owner_id i64
+business_id i64
+title string
+need string
+stage string
+probability i64
+value i64
+next_action string
+}
+
+entity activity {
+id identity
+owner_id i64
+business_id i64
+type string
+notes string
+}
+
+entity followup {
+id identity
+owner_id i64
+business_id i64
+action string
+due_date string
+status string
+}
+
+main
+
+node 001
+op system.read
+
+node 002
+op session.verify
+input 001
+output i64
+
+node 003
+op data.count
+entity business
+where owner_id
+input 002
+output i64
+
+node 010
+op const
+type string
+value "new"
+
+node 011
+op data.count
+entity opportunity
+where stage
+input 010
+output i64
+
+node 012
+op const
+type string
+value "qualified"
+
+node 013
+op data.count
+entity opportunity
+where stage
+input 012
+output i64
+
+node 014
+op const
+type string
+value "proposal"
+
+node 015
+op data.count
+entity opportunity
+where stage
+input 014
+output i64
+
+node 016
+op const
+type string
+value "won"
+
+node 017
+op data.count
+entity opportunity
+where stage
+input 016
+output i64
+
+node 018
+op const
+type string
+value "lost"
+
+node 019
+op data.count
+entity opportunity
+where stage
+input 018
+output i64
+
+node 020
+op data.count
+entity activity
+where owner_id
+input 002
+output i64
+
+node 021
+op const
+type string
+value "open"
+
+node 022
+op data.count
+entity followup
+where status
+input 021
+output i64
+
+node 030
+op cast
+input 003
+output string
+
+node 031
+op cast
+input 011
+output string
+
+node 032
+op cast
+input 013
+output string
+
+node 033
+op cast
+input 015
+output string
+
+node 034
+op cast
+input 017
+output string
+
+node 035
+op cast
+input 019
+output string
+
+node 036
+op cast
+input 020
+output string
+
+node 037
+op cast
+input 022
+output string
+
+node 040
+op const
+type string
+value "\n"
+
+node 041
+op concat
+input 030 040
+output string
+
+node 042
+op concat
+input 041 031
+output string
+
+node 043
+op concat
+input 042 040
+output string
+
+node 044
+op concat
+input 043 032
+output string
+
+node 045
+op concat
+input 044 040
+output string
+
+node 046
+op concat
+input 045 033
+output string
+
+node 047
+op concat
+input 046 040
+output string
+
+node 048
+op concat
+input 047 034
+output string
+
+node 049
+op concat
+input 048 040
+output string
+
+node 050
+op concat
+input 049 035
+output string
+
+node 051
+op concat
+input 050 040
+output string
+
+node 052
+op concat
+input 051 036
+output string
+
+node 053
+op concat
+input 052 040
+output string
+
+node 054
+op concat
+input 053 037
+output string
+
+node 055
+op system.write
+input 054

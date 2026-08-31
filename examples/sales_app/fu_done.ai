@@ -1,0 +1,86 @@
+# fu_done.ai — close YOUR follow-up: status -> "done".
+# in: session_token, followup_id · out: "ok:<rows>" / E403
+
+entity followup {
+id identity
+owner_id i64
+business_id i64
+action string
+due_date string
+status string
+}
+
+main
+
+node 001
+op system.read
+
+node 002
+op session.verify
+input 001
+output i64
+
+node 003
+op system.read
+
+node 004
+op cast
+input 003
+output i64
+
+node 005
+op data.select
+entity followup
+column owner_id
+where id
+input 004
+output i64
+
+node 006
+op compare
+mode eq
+input 002 005
+output bool
+
+node 007
+op const
+type string
+value "error E403: not your follow-up"
+
+node 008
+op const
+type string
+value "done"
+
+node 009
+op data.update
+entity followup
+when 006
+set status
+where id
+input 008 004
+output i64
+
+node 010
+op cast
+input 009
+output string
+
+node 011
+op const
+type string
+value "ok:"
+
+node 012
+op concat
+input 011 010
+output string
+
+node 013
+op branch
+input 006 012 007
+output string
+
+node 014
+op system.write
+input 013

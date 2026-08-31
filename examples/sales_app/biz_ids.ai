@@ -1,0 +1,50 @@
+# biz_ids.ai — typed row keys for the business table: emit returns real
+# list<i64> values to the host (no string round-trip). Ids and scores
+# arrive index-aligned, ordered by id.
+
+entity business {
+id identity
+owner_id i64
+name string
+category string
+city string
+phone string
+website string
+tier i64
+score i64
+stage string
+}
+
+main
+
+node 001
+op system.read
+
+node 002
+op session.verify
+input 001
+output i64
+
+node 003
+op data.list
+entity business
+column id
+where owner_id
+input 002
+output list<i64>
+
+node 004
+op data.list
+entity business
+column score
+where owner_id
+input 002
+output list<i64>
+
+node 005
+op emit
+input 003
+
+node 006
+op emit
+input 004
