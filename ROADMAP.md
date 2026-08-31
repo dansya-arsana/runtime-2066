@@ -347,5 +347,14 @@ Genesis/wallets/robots/blockchain first").
       always rejected (tested)
 - [x] Docs: SECURITY.md, CHANGELOG.md, DEPENDENCIES index (§25 fields)
 - [ ] H5 finish notes_app migration to a package (next cycle)
-- [ ] H6 property/fuzz expansion; H7 SBOM + signed releases; H8 Rust
-      core; H9 FIDO2 — sequenced per plan §91–§94
+- [x] H6 testing expansion: property suite (idempotence, hash-stability,
+      sign/verify, no-widening) + fuzz campaign over grants/envelopes/
+      proposals/evidence/manifests (980+ mutants classified; found and
+      fixed verify_evidence crash; pinned the unsigned-transition hole)
+- [x] H7 release engineering: `2066 sbom` (SPDX 2.3, deterministic),
+      `2066 release`/`verify-release` (signed file-by-file tree proof),
+      `2066 backup`/`restore` (§60 fail-closed bundles), wheel verified
+      REPRODUCIBLE with pinned SOURCE_DATE_EPOCH
+      (tools/release/REPRODUCIBILITY.md)
+- [x] §29 protocol version 0.2 separated from runtime version
+- [ ] H8 Rust core; H9 FIDO2 — sequenced per plan §93–§94

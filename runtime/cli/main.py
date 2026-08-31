@@ -61,6 +61,7 @@ from runtime.cli.commands import (  # noqa: F401
     _inspect_unit, _key_format, _key_inspect, _key_rotate, _keygen,
     _list_packages, _merge, _migrate,
     _propose, _redteam, _repair, _reputation, _revoke, _runtime_digest,
+    _backup, _restore, _sbom, _release, _verify_release,
     _sign_caps, _verify_caps, _verify_proposal)
 from runtime.cli.usage import USAGE
 
@@ -114,16 +115,18 @@ def main(argv: list[str] | None = None) -> int:
      session_key_path, evidence_path, base_path, proposals_paths,
      force_flag, ttl_minutes, pin_value, revocations_path,
      for_hash, trust_store_path, reputation_path, args,
-     key_paths, multisig_spec, new_pin_value, subject_id,
-     profile) = parsed
-    ONE_ARG = ("keygen", "reference", "digest", "selftest", "list")
+     key_paths, multisig_spec, new_pin_value, subject_id, profile,
+     programs_root, policies_root, to_dir) = parsed
+    ONE_ARG = ("keygen", "reference", "digest", "selftest", "list",
+           "sbom", "release")
     PATH_ONLY = ("evidence",)  # command + one path, no second argument
     TWO_ARG = ("run", "validate", "repair", "hash", "effects", "migrate",
                "propose", "sign-caps", "verify-caps", "approve", "keygen",
                "key-format", "key-inspect", "merge", "verify-proposal",
                "evidence", "export", "check", "reputation", "redteam",
                "delegate", "chain", "key-rotate", "revoke",
-               "list", "inspect")
+               "list", "inspect", "backup", "restore", "sbom",
+               "release", "verify-release")
     if len(args) == 1 and args[0] in ONE_ARG:
         command, path = args[0], None
     elif len(args) == 2 and args[0] in TWO_ARG:
@@ -186,6 +189,17 @@ def main(argv: list[str] | None = None) -> int:
         return _list_packages(path, json_mode)
     if command == "inspect":
         return _inspect_unit(path, json_mode)
+    if command == "backup":
+        return _backup(path, db_path, evidence_path, programs_root,
+                       policies_root, now_raw)
+    if command == "restore":
+        return _restore(path, out_path if out_path else to_dir)
+    if command == "sbom":
+        return _sbom(out_path, now_raw, json_mode)
+    if command == "release":
+        return _release(out_path, agent_path, key_path, now_raw)
+    if command == "verify-release":
+        return _verify_release(path, agent_path)
 
     try:
         source = pathlib.Path(path).read_text(encoding="utf-8")

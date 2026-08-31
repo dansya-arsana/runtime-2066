@@ -81,6 +81,9 @@ def _parse_args(argv: list[str]):
     new_pin_value: str | None = None     # key-rotate
     subject_id: str | None = None        # delegate
     profile = "development"             # development | production
+    programs_root: str | None = None   # backup sources
+    policies_root: str | None = None
+    to_dir: str | None = None          # restore destination
     positional: list[str] = []
     i = 0
     while i < len(argv):
@@ -99,7 +102,8 @@ def _parse_args(argv: list[str]):
                      "--proposals", "--ttl-minutes", "--pin",
                      "--revocations", "--for-hash", "--trust-store",
                      "--trust", "--force", "--reputation", "--multisig",
-                     "--new-pin", "--subject", "--profile"):
+                     "--new-pin", "--subject", "--profile",
+                     "--programs", "--policies", "--to"):
             if not _take_value(argv, i):
                 return None
             value = argv[i + 1]
@@ -157,6 +161,12 @@ def _parse_args(argv: list[str]):
                 new_pin_value = value
             elif arg == "--subject":
                 subject_id = value
+            elif arg == "--programs":
+                programs_root = value
+            elif arg == "--policies":
+                policies_root = value
+            elif arg == "--to":
+                to_dir = value
             elif arg == "--profile":
                 if value not in ("development", "production"):
                     return None
@@ -176,6 +186,7 @@ def _parse_args(argv: list[str]):
             session_key_path, evidence_path, base_path, proposals_paths,
             force_flag, ttl_minutes, pin_value, revocations_path,
             for_hash, trust_store_path, reputation_path, positional,
-            key_paths, multisig_spec, new_pin_value, subject_id, profile)
+            key_paths, multisig_spec, new_pin_value, subject_id, profile,
+            programs_root, policies_root, to_dir)
 def _take_value(argv: list[str], i: int) -> bool:
     return i + 1 < len(argv)

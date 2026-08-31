@@ -1,5 +1,7 @@
 # THREAT_MODEL.md — Milestone 4a scope
 
+> Updated 2026-08-31 (H6/H7 hardening): fuzz campaign over trust loaders complete (one crash fixed: verify_evidence on corrupt lines); signature-stripping pinned as the known transition hole closed by `--profile production`; signed releases + reproducible wheel now give an integrity story for distributed artifacts.
+
 Master roadmap §88/§89 define the long-term threat model. This file states
 what the **current** artifact does and does not defend against, so no one
 mistakes this runtime for the fully secured 2066.

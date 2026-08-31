@@ -96,6 +96,19 @@ python -m runtime inspect sales::business::add
 # the full context card, no file browsing (hardening plan §16)
 ```
 
+## Release engineering
+
+```bash
+python -m runtime sbom --out sbom.json          # SPDX 2.3
+python -m runtime release --out release.json --agent id.json --key k.key
+python -m runtime verify-release release.json --agent id.json
+python -m runtime backup bundle/ --db sales.db --programs programs --policies policies
+python -m runtime restore bundle/ --to restored/   # verify-everything first
+```
+
+Wheels are byte-reproducible with pinned `SOURCE_DATE_EPOCH`
+(tools/release/REPRODUCIBILITY.md).
+
 ## Quickstart
 
 ```bash

@@ -469,6 +469,7 @@
    "out": "i64"
   }
  },
+ "protocol": "0.2",
  "types": [
   "bool",
   "i64",

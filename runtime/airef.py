@@ -158,8 +158,10 @@ def ai_reference(version: str) -> dict:
         raise AssertionError(
             f"ai reference out of sync with validator: missing={missing} "
             f"extra={extra}")
+    from . import PROTOCOL_VERSION
     return {
         "language": "2066",
+        "protocol": PROTOCOL_VERSION,
         "version": version,
         "types": ["bool", "i64", "f64", "string", "bytes", "null"],
         "effects": sorted(set(EFFECT_OF.values())),

@@ -1143,3 +1143,117 @@ def _inspect_unit(address: str, json_mode: bool) -> int:
           "(protocol 0.2)")
     print(f"PATH         {unit.path}")
     return 0
+
+
+def _backup(out_dir: str, db_path: str | None, evidence_path: str | None,
+            programs_root: str | None, policies_root: str | None,
+            now_raw: str | None) -> int:
+    """2066 backup <out-dir> [--db f] [--evidence f] [--programs dir]
+    [--policies dir] — verified state bundle (plan SS60)."""
+    import pathlib
+    from runtime.backup import collect_sources, create_backup
+    from runtime.capabilities import parse_timestamp
+    now = parse_timestamp(now_raw) if now_raw else None
+    sources = collect_sources(
+        db=pathlib.Path(db_path) if db_path else None,
+        evidence=pathlib.Path(evidence_path) if evidence_path else None,
+        programs=pathlib.Path(programs_root) if programs_root else None,
+        policies=pathlib.Path(policies_root) if policies_root else None)
+    if not sources:
+        print("error: nothing to back up — pass --db and/or "
+              "--programs/--policies", file=sys.stderr)
+        return 3
+    try:
+        manifest = create_backup(pathlib.Path(out_dir), sources, now=now)
+    except (OSError, ValueError) as exc:
+        print(f"error: backup failed: {exc}", file=sys.stderr)
+        return 3
+    print(f"backed up {len(manifest['files'])} file(s) to {out_dir}")
+    for rel in manifest["excluded"]:
+        print(f"  excluded (secret): {rel}")
+    return 0
+
+
+def _restore(bundle_dir: str, to_dir: str | None) -> int:
+    """2066 restore <bundle> --to <dir> — verify EVERYTHING, then copy
+    (fail closed: any mismatch copies nothing)."""
+    import pathlib
+    from runtime.backup import restore_backup
+    if not to_dir:
+        print("error: restore needs --to <destination>", file=sys.stderr)
+        return 3
+    result = restore_backup(pathlib.Path(bundle_dir), pathlib.Path(to_dir))
+    if not result["ok"]:
+        print("REFUSING to restore:", file=sys.stderr)
+        for problem in result["problems"]:
+            print(f"  {problem}", file=sys.stderr)
+        return 3
+    print(f"restored {len(result['restored'])} file(s) to {to_dir}")
+    for rel in result.get("excluded", []):
+        print(f"  note: was excluded from backup: {rel}")
+    return 0
+
+
+def _sbom(out_path: str | None, now_raw: str | None,
+          json_mode: bool) -> int:
+    """2066 sbom [--out file] — SPDX 2.3 (plan SS26)."""
+    from runtime.capabilities import parse_timestamp
+    from runtime.sbom import build_sbom, render_sbom
+    now = parse_timestamp(now_raw) if now_raw else None
+    text = render_sbom(build_sbom(now=now))
+    if out_path:
+        pathlib.Path(out_path).write_text(text, encoding="utf-8")
+        print(f"SBOM written to {out_path}")
+    else:
+        print(text, end="")
+    return 0
+
+
+def _release(out_path: str | None, agent_path: str | None,
+             key_path: str | None, now_raw: str | None) -> int:
+    """2066 release [--out file] --agent id.json --key secret.key —
+    hash the runtime tree + spec + corpus and sign it (plan SS28)."""
+    from datetime import datetime, timezone
+    from runtime.release import build_release, sign_release
+    if not (agent_path and key_path and out_path):
+        print("error: release needs --out file --agent id.json "
+              "--key secret.key", file=sys.stderr)
+        return 3
+    from runtime.capabilities import parse_timestamp
+    now = parse_timestamp(now_raw) if now_raw \
+        else datetime.now(timezone.utc)
+    payload = build_release(now=now)
+    from runtime.release import load_identity_files
+    issuer, secret = load_identity_files(agent_path, key_path)
+    envelope = sign_release(payload, issuer, secret)
+    pathlib.Path(out_path).write_text(
+        json.dumps(envelope, indent=1, sort_keys=True) + "\n",
+        encoding="utf-8")
+    print(f"signed release {payload['runtime_version']} "
+          f"(protocol {payload['protocol_version']}) -> {out_path}: "
+          f"{len(payload['files'])} runtime files, "
+          f"{len(payload['spec'])} spec files hashed")
+    return 0
+
+
+def _verify_release(path: str, agent_path: str | None) -> int:
+    """2066 verify-release release.json --agent id.json — signature +
+    live tree comparison; exit 0 only on exact match."""
+    if not agent_path:
+        print("error: verify-release needs --agent id.json (the pinned "
+              "release identity)", file=sys.stderr)
+        return 3
+    from runtime.release import verify_release
+    envelope = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
+    issuer = identity.parse_identity(json.loads(
+        pathlib.Path(agent_path).read_text(encoding="utf-8")))
+    result = verify_release(envelope, issuer.public_key)
+    if result["ok"]:
+        print(f"OK: tree matches signed release "
+              f"{result['runtime_version']} "
+              f"(protocol {result['protocol_version']})")
+        return 0
+    print("RELEASE MISMATCH:", file=sys.stderr)
+    for problem in result["problems"]:
+        print(f"  {problem}", file=sys.stderr)
+    return 3

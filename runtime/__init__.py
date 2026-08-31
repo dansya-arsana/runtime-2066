@@ -21,6 +21,12 @@ from .interpreter import execute
 
 __version__ = "1.4.1"
 
+# The PROTOCOL is the normative semantics (canonical form, ops, error
+# namespace, capability model); the runtime is one implementation of
+# it. They version independently (hardening plan §29) — a runtime
+# release never silently changes the protocol.
+PROTOCOL_VERSION = "0.2"
+
 __all__ = [
     "Analysis",
     "Function",
@@ -30,6 +36,7 @@ __all__ = [
     "Program",
     "RepairOutcome",
     "StructuredError",
+    "PROTOCOL_VERSION",
     "__version__",
     "analyze",
     "canonical_json",

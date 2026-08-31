@@ -92,6 +92,9 @@ class TestBoundaries(unittest.TestCase):
             "__init__", "__main__",  # package shims
             "ops", "interpreter", "plan_vm", "export",
             "repair", "capabilities",
+            # release-engineering tooling (SS26/SS28/SS60): sbom,
+            # signed releases, backup — shell-side, import core inward
+            "sbom", "release", "backup",
             # app shell shipped INSIDE the package so pip installs get
             # the 2066-mcp entry point with bundled tool programs
             # (runtime/programs/); imports inward only. Documented

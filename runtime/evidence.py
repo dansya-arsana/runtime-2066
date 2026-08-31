@@ -63,18 +63,33 @@ class EvidenceLog:
 
 
 def verify_evidence(path: str) -> dict:
-    """Walk the chain; report integrity. Any edit breaks a link."""
+    """Walk the chain; report integrity. Any edit breaks a link.
+
+    A verification API must REPORT tampering, never crash on it: a line
+    that is not valid JSON is itself evidence of corruption (found by
+    the H6 fuzz campaign — it used to raise JSONDecodeError).
+    """
     file = Path(path)
     if not file.exists():
         return {"ok": False, "error": "no evidence file", "records": 0}
     records = []
-    for line in file.read_text(encoding="utf-8").splitlines():
+    for number, line in enumerate(file.read_text(encoding="utf-8")
+                                  .splitlines(), 1):
         if line.strip():
-            records.append(json.loads(line))
+            try:
+                records.append(json.loads(line))
+            except json.JSONDecodeError:
+                return {"ok": False, "records": len(records),
+                        "broken_at": number,
+                        "reason": "event is not valid JSON (corrupted)"}
     if not records:
         return {"ok": True, "records": 0, "note": "empty log"}
     prev = "0" * 64
     for index, record in enumerate(records):
+        if not isinstance(record, dict) or "hash" not in record:
+            return {"ok": False, "records": len(records),
+                    "broken_at": index + 1,
+                    "reason": "malformed event record"}
         if record.get("prev_hash") != prev:
             return {"ok": False, "records": len(records),
                     "broken_at": index + 1,

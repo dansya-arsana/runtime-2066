@@ -1,6 +1,8 @@
 # CLAUDE.md — 2066 Project Guide
 
-> **Last updated: 2026-08-31 (night) — hardening cycle H0–H4 done:
+> **Last updated: 2026-08-31 (late) — hardening H0–H7 done
+> (property+fuzz suites, backup/restore, SBOM, signed releases,
+> reproducible wheel, protocol version 0.2).
 > semantic packages (`2066 list`/`inspect`), repo boundaries
 > (programs/apps/policies/protocol), production profile, frozen
 > conformance corpus. 353 tests green. Baseline tag:
