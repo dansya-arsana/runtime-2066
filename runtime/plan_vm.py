@@ -75,10 +75,11 @@ def compile_plan(program: Program, analysis: Analysis | None = None) -> Plan:
 def execute_plan(program: Program, analysis: Analysis | None = None, *,
                  grants: GrantSet | None = None, now: datetime | None = None,
                  db: DataPlane | None = None,
-                 sessions: SessionVerifier | None = None) -> list[object]:
+                 sessions: SessionVerifier | None = None,
+                 net=None) -> list[object]:
     """Adapter entry point: same contract as interpreter.execute."""
     plan = compile_plan(program, analysis)
-    vm = _VM(plan, grants, now, db, sessions)
+    vm = _VM(plan, grants, now, db, sessions, net)
     vm.exec(plan.main, [])
     return vm.emits
 
@@ -138,6 +139,8 @@ def _compile_scope(
             instrs.append(Instr("WRITE", node=node_id, out=slot[node_id]))
         elif op == "system.read":
             instrs.append(Instr("STDIN", node=node_id, out=slot[node_id]))
+        elif op == "net.fetch":
+            instrs.append(Instr("NETFETCH", node=node_id, out=slot[node_id]))
         elif op == "system.write":
             instrs.append(Instr("STDOUT", node=node_id, out=slot[node_id]))
         elif op == "concat":
@@ -182,12 +185,13 @@ def _compile_scope(
 class _VM:
     def __init__(self, plan: Plan, grants: GrantSet | None,
                  now: datetime | None, db: DataPlane | None,
-                 sessions: SessionVerifier | None):
+                 sessions: SessionVerifier | None, net=None):
         self.plan = plan
         self.grants = grants
         self.now = now
         self.db = db
         self.sessions = sessions
+        self.net = net
         self.emits: list[object] = []
 
     def exec(self, scope: ScopePlan, args: list[object]) -> object | None:
@@ -233,6 +237,8 @@ class _VM:
                     self.grants, ins.node, path, content, self.now)
             elif op == "STDIN":
                 slots[ins.out] = fsops.read_line(ins.node)
+            elif op == "NETFETCH":
+                slots[ins.out] = _net_fetch(self, ins.node, stack.pop())
             elif op == "STDOUT":
                 slots[ins.out] = fsops.write_str(ins.node, stack.pop())
             elif op == "CONCAT":
@@ -324,3 +330,30 @@ def _dispatch_data(vm: "_VM", op_name: str, fields: dict, node_id: str,
         return db.select(node_id, fields["entity"], fields["column"],
                          fields["where"], value)
     return db.delete(node_id, fields["entity"], fields["where"], value)
+
+
+def _net_fetch(vm: "_VM", node_id: str, url: str) -> str:
+    """Outbound GET, capability-gated by hostname (same contract as the
+    tree adapter's _net_fetch: host supplies the transport, default deny)."""
+    from urllib.parse import urlparse
+    from .errors import StructuredError
+
+    if vm.net is None:
+        raise StructuredError(
+            code="E401", node=node_id, operation="net.fetch",
+            detail="denied: no network attached; net.fetch requires "
+                   "the host to supply a transport (default deny)")
+    host = urlparse(url).hostname or ""
+    if not host:
+        raise StructuredError(
+            code="E203", node=node_id, operation="net.fetch",
+            detail=f"cannot parse host from url {url!r}")
+    vm.grants.check("net.request", host.lower(), vm.now, node=node_id)
+    try:
+        body = vm.net(url)
+    except Exception as exc:
+        raise StructuredError(
+            code="E560", node=node_id, operation="net.fetch",
+            detail=f"request to {host} failed: "
+                   f"{exc.__class__.__name__}: {exc}") from exc
+    return body if isinstance(body, str) else str(body)

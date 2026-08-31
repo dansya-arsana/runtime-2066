@@ -86,6 +86,7 @@ PROGRAMS = {}
 for name in ("register", "login", "biz_add", "biz_list", "biz_ids",
              "opp_add", "opp_list", "opp_ids", "opp_stage",
              "act_add", "act_list", "fu_add", "fu_list", "fu_ids", "fu_done",
+             "api_health",
              "funnel"):
     program = parse_source((APP_DIR / f"{name}.ai").read_text(
         encoding="utf-8"))
@@ -174,6 +175,40 @@ def _rows(token: str) -> dict:
     return out
 
 
+def _http_transport(url: str) -> str:
+    import urllib.request
+    with urllib.request.urlopen(urllib.request.Request(
+            url, headers={"User-Agent": "2066-sales/1.0"}), timeout=8) as r:
+        return r.read().decode("utf-8")
+
+
+def _integration_status() -> dict:
+    """Live verdict from api_health.ai + the cronjob's last stored run."""
+    from datetime import datetime, timezone
+    program, analysis = PROGRAMS["api_health"]
+    old_in, old_out = sys.stdin, sys.stdout
+    sys.stdin, sys.stdout = io.StringIO(""), io.StringIO()
+    try:
+        execute(program, analysis, grants=GRANTS, net=_http_transport)
+        verdict = sys.stdout.getvalue().strip()
+    except Exception as exc:
+        verdict = f"sales-api: ERROR ({getattr(exc, 'code', 'E???')})"
+    finally:
+        sys.stdin, sys.stdout = old_in, old_out
+    live = {"verdict": verdict,
+            "checked_at": datetime.now(timezone.utc)
+            .isoformat(timespec="seconds"),
+            "source": "live"}
+    cron = {}
+    cron_file = Path(DB).parent / "integration_status.json"
+    if cron_file.exists():
+        try:
+            cron = json.loads(cron_file.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            cron = {}
+    return {"live": live, "cron": cron}
+
+
 def _csv_lines(text: str, n: int) -> list[list[str]]:
     """Split n joined CSV lines into equal-length column lists."""
     lines = (text.split("\n") + [""] * n)[:n]
@@ -204,6 +239,8 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"ok": True, "engines": sorted(PROGRAMS)})
         elif path == "/api/board":
             self._json(_rows(q.get("token", "")))
+        elif path == "/api/integrations":
+            self._json(_integration_status())
         else:
             static_name = "index.html" if path == "/" else path.lstrip("/")
             if static_name in STATIC:

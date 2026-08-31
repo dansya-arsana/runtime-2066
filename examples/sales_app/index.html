@@ -43,7 +43,11 @@
       <span class="brand-mark">2</span>
       <span class="brand-name">2066 Sales</span>
     </div>
-    <span class="pill ok" title="15 engines compiled & validated at startup">✓ engines verified</span>
+    <span class="pill ok" title="16 engines compiled & validated at startup">✓ engines verified</span>
+    <nav class="nav">
+      <a href="#" class="nav-link active" data-tab="tab-dashboard" onclick="showTab(event, 'tab-dashboard')">Dashboard</a>
+      <a href="#" class="nav-link" data-tab="tab-integrations" onclick="showTab(event, 'tab-integrations')">Integrations</a>
+    </nav>
     <div class="top-right">
       <span id="who" class="who"></span>
       <button class="btn ghost sm" onclick="logout()">Sign out</button>
@@ -51,6 +55,7 @@
   </header>
 
   <main class="page">
+    <div id="tab-dashboard" class="tab">
     <!-- KPI row -->
     <section class="kpis" id="kpis"></section>
 
@@ -143,6 +148,26 @@
           <span>Calls, visits, notes — every entry passes through
           <code>act_add.ai</code>.</span>
         </div>
+      </section>
+    </div>
+    </div>
+
+    <!-- Integrations tab -->
+    <div id="tab-integrations" class="tab" hidden>
+      <section class="card">
+        <div class="card-head">
+          <h2>External microservices</h2>
+          <span class="hint">reached via <code>net.fetch</code> — capability-gated egress, host allowlist</span>
+        </div>
+        <div id="integration-list"></div>
+        <div class="hint">the grant: <code>{"action": "net.request",
+        "resource": "dev-api.arsana.cloud"}</code> — every other host is
+        denied at the language layer, before a packet leaves.</div>
+      </section>
+      <section class="card">
+        <div class="card-head"><h2>Cronjob</h2>
+          <span class="hint">host crontab → <code>cron_check.py</code> → stores the program's verdict</span></div>
+        <div id="cron-info" class="cron"></div>
       </section>
     </div>
   </main>

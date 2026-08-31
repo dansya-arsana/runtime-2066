@@ -5,6 +5,7 @@
   "FILESYSTEM_READ",
   "FILESYSTEM_WRITE",
   "IDENTITY",
+  "NETWORK",
   "PURE",
   "SYSTEM"
  ],
@@ -48,6 +49,7 @@
   "E502": "data: unknown column",
   "E503": "data: identity column cannot be updated",
   "E505": "data: SQLite error",
+  "E560": "network: net.fetch transport failure (unreachable, non-2xx, timeout)",
   "E601": "proposal: made against a different base hash (graph moved)",
   "E602": "proposal: signature verification failed",
   "E603": "proposal: conflicting mutation (merge rejected)",
@@ -204,13 +206,16 @@
    "cap": "data.delete",
    "effect": "DATA_WRITE",
    "fields": {
+    "optional": [
+     "when"
+    ],
     "required": [
      "entity",
      "where"
     ]
    },
    "inputs": 1,
-   "note": "separate action: data.read CANNOT delete; requires --db",
+   "note": "separate action: data.read CANNOT delete; requires --db; `when <bool-node>` guards the write (false = verified no-op, returns 0)",
    "op": "data.delete",
    "out": "i64 rows"
   },
@@ -373,6 +378,20 @@
    "note": "",
    "op": "multiply",
    "out": "i64|f64"
+  },
+  "net.fetch": {
+   "cap": "net.request (hostname)",
+   "effect": "NETWORK",
+   "fields": {
+    "optional": [
+     "output"
+    ],
+    "required": []
+   },
+   "inputs": 1,
+   "note": "outbound GET on the full URL given as input; host must be allowlisted by a net.request grant (subdomains covered); host supplies transport; failure E560",
+   "op": "net.fetch",
+   "out": "string body"
   },
   "param": {
    "cap": null,

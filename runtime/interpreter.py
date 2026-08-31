@@ -9,6 +9,7 @@ equivalent by construction and verified by tests.
 from __future__ import annotations
 
 from datetime import datetime
+from urllib.parse import urlparse
 
 from . import fsops, ops
 from .capabilities import GrantSet
@@ -24,17 +25,18 @@ def execute(program: Program, analysis: Analysis | None = None, *,
             grants: GrantSet | None = None, now: datetime | None = None,
             db: DataPlane | None = None,
             sessions: SessionVerifier | None = None,
-            revocations=None) -> list[object]:
+            revocations=None, net=None) -> list[object]:
     """Evaluate the graph; return emit values ordered by numeric node id.
 
     `grants` carries the runtime-held capability set, `db` the semantic
-    data plane, and `sessions` the session-token verifier; None (the
-    default) denies every effectful operation.
+    data plane, `sessions` the session-token verifier, and `net` the
+    host-supplied outbound transport; None (the default) denies every
+    effectful operation.
     """
     if analysis is None:
         analysis = analyze(program)
     machine = _Machine(program, analysis, grants, now, db, sessions,
-                       revocations)
+                       revocations, net)
     return machine.run()
 
 
@@ -47,8 +49,9 @@ class _Machine:
     def __init__(self, program: Program, analysis: Analysis,
                  grants: GrantSet | None, now: datetime | None,
                  db: DataPlane | None, sessions: SessionVerifier | None,
-                 revocations=None):
+                 revocations=None, net=None):
         self.revocations = revocations
+        self.net = net
         self.program = program
         self.analysis = analysis
         self.grants = grants
@@ -126,6 +129,8 @@ class _Machine:
             return self.db.delete(node.id, node.field("entity"),
                                   node.field("where"), ins[0]) \
                 if self.db else _no_db(node.id, op)
+        if op == "net.fetch":
+            return self._net_fetch(node, ins[0])
         if op == "data.list":
             limit = int(node.field("limit")) if node.has("limit") else None
             return self.db.list_rows(node.id, node.field("entity"),
@@ -140,6 +145,33 @@ class _Machine:
         if op == "list.join":
             return ops.list_join(ins[0], ins[1])
         return _eval_node(node, op, ins)
+
+    def _net_fetch(self, node: Node, url: str) -> str:
+        """Outbound GET, capability-gated by hostname (egress allowlist).
+
+        The runtime owns no sockets: the HOST supplies the transport
+        callable, so tests inject fakes and the graph stays hermetic.
+        """
+        if self.net is None:
+            raise StructuredError(
+                code="E401", node=node.id, operation="net.fetch",
+                detail="denied: no network attached; net.fetch requires "
+                       "the host to supply a transport (default deny)")
+        host = urlparse(url).hostname or ""
+        if not host:
+            raise StructuredError(
+                code="E203", node=node.id, operation="net.fetch",
+                detail=f"cannot parse host from url {url!r}")
+        self.grants.check("net.request", host.lower(), self.now,
+                          node=node.id)
+        try:
+            body = self.net(url)
+        except Exception as exc:
+            raise StructuredError(
+                code="E560", node=node.id, operation="net.fetch",
+                detail=f"request to {host} failed: "
+                       f"{exc.__class__.__name__}: {exc}") from exc
+        return body if isinstance(body, str) else str(body)
 
     def _call(self, node: Node, args: list[object]) -> object:
         function = self.program.functions[node.field("callee")]

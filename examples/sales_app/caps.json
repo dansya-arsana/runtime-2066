@@ -1,15 +1,49 @@
 {
   "subject": "sales-app",
   "grants": [
-    {"action": "data.read", "resource": "user"},
-    {"action": "data.write", "resource": "user"},
-    {"action": "data.read", "resource": "business"},
-    {"action": "data.write", "resource": "business"},
-    {"action": "data.read", "resource": "opportunity"},
-    {"action": "data.write", "resource": "opportunity"},
-    {"action": "data.read", "resource": "activity"},
-    {"action": "data.write", "resource": "activity"},
-    {"action": "data.read", "resource": "followup"},
-    {"action": "data.write", "resource": "followup"}
+    {
+      "action": "data.read",
+      "resource": "user"
+    },
+    {
+      "action": "data.write",
+      "resource": "user"
+    },
+    {
+      "action": "data.read",
+      "resource": "business"
+    },
+    {
+      "action": "data.write",
+      "resource": "business"
+    },
+    {
+      "action": "data.read",
+      "resource": "opportunity"
+    },
+    {
+      "action": "data.write",
+      "resource": "opportunity"
+    },
+    {
+      "action": "data.read",
+      "resource": "activity"
+    },
+    {
+      "action": "data.write",
+      "resource": "activity"
+    },
+    {
+      "action": "data.read",
+      "resource": "followup"
+    },
+    {
+      "action": "data.write",
+      "resource": "followup"
+    },
+    {
+      "action": "net.request",
+      "resource": "dev-api.arsana.cloud"
+    }
   ]
 }

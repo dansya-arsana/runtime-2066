@@ -282,4 +282,36 @@ async function refresh() {
   emptyFor("acts", acts.length);
 }
 
+/* ---------- tabs + integrations ---------- */
+function showTab(e, id) {
+  e.preventDefault();
+  document.querySelectorAll(".tab").forEach(t => t.hidden = t.id !== id);
+  document.querySelectorAll(".nav-link").forEach(a =>
+    a.classList.toggle("active", a.dataset.tab === id));
+  if (id === "tab-integrations") loadIntegrations();
+}
+
+async function loadIntegrations() {
+  const r = await api("/api/integrations");
+  const live = r.live || {};
+  const cron = r.cron || {};
+  const up = (live.verdict || "").includes("UP");
+  $("integration-list").innerHTML = `
+    <div class="svc">
+      <div>
+        <div class="svc-name">sales-api <span class="cell-dim">· dev-api.arsana.cloud</span></div>
+        <div class="cell-dim">real backend of the production sales machine — called by <code>api_health.ai</code></div>
+      </div>
+      <span class="stage ${up ? "st-won" : "st-lost"}">${esc(live.verdict || "checking…")}</span>
+    </div>`;
+  const when = cron.checked_at ? new Date(cron.checked_at + "Z").toLocaleString() : null;
+  $("cron-info").innerHTML = cron.verdict
+    ? `<div class="svc"><div>
+         <div class="svc-name">last cron run</div>
+         <div class="cell-dim">${esc(when)} (UTC) · verdict: <b>${esc(cron.verdict)}</b></div>
+       </div></div>`
+    : `<div class="empty show"><b>No cron run recorded yet</b>
+       <span>the host crontab writes here every 5 minutes via cron_check.py</span></div>`;
+}
+
 if (TOKEN) enter();

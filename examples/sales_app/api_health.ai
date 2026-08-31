@@ -1,0 +1,50 @@
+# api_health.ai — the 2066 program that calls the REAL sales-api.
+#
+# Outbound GET to the live microservice, decided in-graph: net.fetch is
+# capability-gated (caps.json allows net.request on dev-api.arsana.cloud
+# ONLY — every other host is denied at the language layer), and the
+# UP/DOWN verdict is a compare + branch, not a script's opinion.
+#
+# in: (none) · out: "sales-api: UP" | "sales-api: DOWN"
+
+main
+
+node 001
+op const
+type string
+value "https://dev-api.arsana.cloud/health"
+
+node 002
+op net.fetch
+input 001
+output string
+
+node 003
+op const
+type string
+value "{\"status\":\"ok\",\"service\":\"sales-api\"}"
+
+node 004
+op compare
+mode eq
+input 002 003
+output bool
+
+node 005
+op const
+type string
+value "sales-api: UP"
+
+node 006
+op const
+type string
+value "sales-api: DOWN"
+
+node 007
+op branch
+input 004 005 006
+output string
+
+node 008
+op system.write
+input 007

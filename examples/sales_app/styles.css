@@ -267,3 +267,19 @@ input:focus, select:focus {
   .topbar { padding: 10px 14px; }
   .page { padding: 14px 12px 50px; }
 }
+
+/* ---------- navbar ---------- */
+.nav { display: flex; gap: 4px; margin-left: 10px; }
+.nav-link {
+  color: var(--muted); text-decoration: none; font-weight: 600;
+  font-size: 13px; padding: 6px 12px; border-radius: 8px;
+}
+.nav-link:hover { color: var(--ink); background: var(--line-soft); }
+.nav-link.active { color: var(--accent); background: var(--accent-soft); }
+.svc {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; padding: 12px 2px; border-bottom: 1px solid var(--line-soft);
+}
+.svc:last-child { border-bottom: none; }
+.svc-name { font-weight: 600; font-size: 13.5px; }
+.cron { margin-top: 4px; }

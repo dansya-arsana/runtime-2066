@@ -64,6 +64,7 @@ _OPS: dict[str, OpSpec] = {
     "filesystem.read": OpSpec("filesystem.read", frozenset(), frozenset({"output"}), 1, True, "any"),
     "filesystem.write": OpSpec("filesystem.write", frozenset(), frozenset({"output"}), 2, True, "any"),
     "system.read": OpSpec("system.read", frozenset(), frozenset({"output"}), 0, False, "any"),
+    "net.fetch": OpSpec("net.fetch", frozenset(), frozenset({"output"}), 1, True, "any"),
     "system.write": OpSpec("system.write", frozenset(), frozenset({"output"}), 1, False, "any"),
     "concat": OpSpec("concat", frozenset(), frozenset({"output"}), 2, True, "any"),
     "crypto.digest": OpSpec("crypto.digest", frozenset({"algorithm"}), frozenset({"output"}), 1, True, "any"),
@@ -98,6 +99,7 @@ EFFECT_OF: dict[str, str] = {
     "list.length": "PURE", "list.get": "PURE", "list.join": "PURE",
     "data.insert": "DATA_WRITE", "data.update": "DATA_WRITE",
     "data.delete": "DATA_WRITE",
+    "net.fetch": "NETWORK",
 }
 
 
@@ -608,6 +610,9 @@ def _infer_type(
         _require_string(node, op, [0], ins)
         return "i64"
     if op == "crypto.digest":
+        _require_string(node, op, [0], ins)
+        return "string"
+    if op == "net.fetch":
         _require_string(node, op, [0], ins)
         return "string"
     if op == "session.verify":

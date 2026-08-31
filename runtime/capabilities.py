@@ -32,7 +32,8 @@ from .revocation import check_hash_binding, grant_id, Revocations
 from .errors import StructuredError
 
 ACTIONS = ("filesystem.read", "filesystem.write",
-           "data.read", "data.write", "data.delete")
+           "data.read", "data.write", "data.delete",
+           "net.request")
 
 
 def normalize_path(path: str) -> str:
@@ -127,10 +128,16 @@ class GrantSet:
         `path` must already be normalized. Deterministic: candidates are
         evaluated in grant-declaration order and the first survivor wins.
         """
-        candidates = [
-            cap for cap in self.capabilities
-            if cap.action == action and _scope_covers(cap.resource, path)
-        ]
+        if action == "net.request":
+            candidates = [
+                cap for cap in self.capabilities
+                if cap.action == action and _host_covers(cap.resource, path)
+            ]
+        else:
+            candidates = [
+                cap for cap in self.capabilities
+                if cap.action == action and _scope_covers(cap.resource, path)
+            ]
         if not candidates:
             raise StructuredError(
                 code="E401", node=node, operation=action,
@@ -250,9 +257,19 @@ def _parse_grant(entry, index: int) -> Capability:
     if not isinstance(resource, str) or not resource.strip():
         raise ValueError(f"grant {index}: empty resource is ambiguous "
                          f"and refused — name an explicit scope")
-    # filesystem scopes are paths; data resources are bare entity names
+    # filesystem scopes are paths; data resources are bare entity names;
+    # net.request scopes are hostnames (egress allowlist)
     if action.startswith("filesystem."):
         resource = normalize_path(resource)
+    elif action == "net.request":
+        resource = resource.strip().lower()
+        labels = resource.split(".")
+        if (len(labels) < 2
+                or not all(l and l.replace("-", "").isalnum()
+                           for l in labels)):
+            raise ValueError(
+                f"grant {index}: net.request resource must be a hostname "
+                f"(e.g. \"api.example.com\"), received {resource!r}")
     elif not resource.strip().isidentifier():
         raise ValueError(f"grant {index}: data resource must be an entity "
                          f"name, received {resource!r}")
@@ -275,3 +292,8 @@ def _parse_grant(entry, index: int) -> Capability:
 
 def _scope_covers(scope: str, path: str) -> bool:
     return scope == path or path.startswith(scope + "/")
+
+
+def _host_covers(scope: str, host: str) -> bool:
+    """net.request matching: exact host, or scope covers its subdomains."""
+    return host == scope or host.endswith("." + scope)

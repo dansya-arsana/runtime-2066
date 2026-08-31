@@ -23,8 +23,10 @@ programs on the first attempt. Machine-readable reference:
 
 - One canonical form per construct — no syntax alternatives.
 - The graph is a DAG; the call graph is acyclic; **everything evaluates**
-  — `branch` selects values, it does not skip computation. No loops, no
-  recursion. Programs always terminate. Lists are values (from
+  — `branch` selects values, it does not skip computation. Because of
+  this, guard effectful writes with `when <bool-node>` on
+  `data.insert`/`data.update`/`data.delete`: a false guard is a verified
+  no-op (returns 0, zero rows). No loops, no recursion. Lists are values (from
   `data.list`), consumed via `list.length`/`list.get`/`list.join` — there
   is no iteration construct.
 - No implicit coercion: `cast` is the only conversion.
@@ -40,7 +42,7 @@ entity    := "entity" NAME "{" column+ "}"          column := NAME TYPE [unique]
 node_block:= "node" ID "\n" field_line+            ID := digits, globally unique
 func      := "func" NAME node_block+                # exactly one "return" inside
 field     := ("op"|"type"|"value"|"output"|"mode"|"callee"|"index"|"entity"|
-              "column"|"where"|"set"|"algorithm") VALUE
+              "column"|"where"|"set"|"algorithm"|"when") VALUE
             | "input" ID+                           # all inputs on one line
 ```
 
@@ -59,7 +61,7 @@ exponent; renders shortest round-trip, `42.0` stays `42.0`) · `string`
 f64 IEEE total. Renders: `42.0` stays `42.0`, bool `true/false`, bytes
 lowercase hex.
 
-## Operations (29 — complete table)
+## Operations (30 — complete table)
 
 | op | inputs → output | required fields | effect | notes |
 |---|---|---|---|---|
@@ -83,7 +85,8 @@ lowercase hex.
 | `data.count` | where value → i64 | `entity` `where` | DATA_READ | cap: `data.read` |
 | `data.select` | where value → column value | `entity` `column` `where` | DATA_READ | cap: `data.read`; absent → type default |
 | `data.update` | new, where → i64 rows | `entity` `set` `where` | DATA_WRITE | cap: `data.write` |
-| `data.delete` | where value → i64 rows | `entity` `where` | DATA_WRITE | cap: **`data.delete`** (read ≠ delete) |
+| `data.delete` | where value → i64 rows | `entity` `where` | DATA_WRITE | cap: **`data.delete`** (read ≠ delete); optional `when` guard |
+| `net.fetch` | URL string → body string | — | NETWORK | outbound GET; host must be allowlisted by a `net.request` grant (parent domain covers subdomains); host supplies transport; failure E560 |
 | `session.verify` | token string → i64 subject_id | — | IDENTITY | needs `--session-key`; E406 forged, E407 expired; **programs cannot mint tokens** |
 | `data.list` | where value → list\<col type\> | `entity` `column` `where` | DATA_READ | cap: `data.read`; all matching rows, id order; needs `--db` |
 | `list.length` | list → i64 | — | PURE | |
@@ -123,7 +126,7 @@ range · E401 no capability · E402 expired · E403 over limit ·
 E406 session token invalid · E407 session expired · E408 delegation
 bound to other program · E501 unknown
 entity · E502 unknown column · E503 identity update · E505 SQLite
-error · E601 proposal base moved · E602 proposal signature ·
+error · E560 net.fetch transport failure · E601 proposal base moved · E602 proposal signature ·
 E603 proposal conflict · E604 proposal malformed.
 
 Exit: 0 ok · 1 validation · 2 runtime · 3 usage/trust · 4 denied.
