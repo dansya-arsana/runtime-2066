@@ -1,0 +1,104 @@
+entity user {
+id identity
+username string
+password_hash string
+}
+
+# login.ai — verify a password against the stored digest.
+# in: username, password · out: "ok:<id>" or "invalid credentials"
+
+main
+
+node 001
+op system.read
+
+node 002
+op system.read
+
+node 003
+op const
+type string
+value "2066:"
+
+node 004
+op concat
+input 003 001
+output string
+
+node 005
+op crypto.digest
+algorithm sha256
+input 004
+output string
+
+node 006
+op const
+type string
+value ":"
+
+node 007
+op concat
+input 005 006
+output string
+
+node 008
+op concat
+input 007 002
+output string
+
+node 009
+op crypto.digest
+algorithm sha256
+input 008
+output string
+
+node 010
+op data.select
+entity user
+column password_hash
+where username
+input 001
+output string
+
+node 011
+op compare
+mode eq
+input 009 010
+output bool
+
+node 012
+op data.select
+entity user
+column id
+where username
+input 001
+output i64
+
+node 013
+op cast
+input 012
+output string
+
+node 014
+op const
+type string
+value "ok:"
+
+node 015
+op concat
+input 014 013
+output string
+
+node 016
+op const
+type string
+value "invalid credentials"
+
+node 017
+op branch
+input 011 015 016
+output string
+
+node 018
+op system.write
+input 017

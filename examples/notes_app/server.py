@@ -37,12 +37,17 @@ sys.path.insert(0, str(ROOT))
 _KEY_HOME = Path(os.environ.get("2066_KEY_HOME", str(Path.home() / ".2066")))
 APP_DIR = Path(__file__).resolve().parent
 
-from runtime import (analyze, execute, identity, parse_source)  # noqa: E402
+from runtime import (StructuredError, analyze, execute, identity,  # noqa: E402
+                     parse_source, program_effects, program_hash)
 from runtime.capabilities import GrantSet  # noqa: E402
 from runtime.data import DataPlane  # noqa: E402
 from runtime.revocation import Revocations  # noqa: E402
 from runtime.session import (SessionRegistry, SessionVerifier,  # noqa: E402
                              mint_session_token)
+
+import runtime as _runtime_pkg
+HELLO_EXAMPLE = (Path(_runtime_pkg.__file__).parent / "programs"
+                 / "hello.ai")
 from runtime.revocation import Revocations  # noqa: E402
 
 DB = os.environ.get("2066_NOTES_DB", str(APP_DIR / "notes.db"))
@@ -53,7 +58,8 @@ REGISTRY_PATH = str(_KEY_HOME / "notes_session_registry.json")
 _REVOCATIONS_PATH = str(_KEY_HOME / "notes_session_revocations.jsonl")
 STATIC = {"index.html": "text/html; charset=utf-8",
           "app.js": "text/javascript; charset=utf-8",
-          "styles.css": "text/css; charset=utf-8"}
+          "styles.css": "text/css; charset=utf-8",
+          "playground.html": "text/html; charset=utf-8"}
 PORT = int(os.environ.get("PORT", "8618"))
 HOST = os.environ.get("HOST", "127.0.0.1")
 SESSION_TTL_MINUTES = 30
@@ -143,6 +149,59 @@ def run_engine(name: str, params: list[str]) -> tuple[str, int]:
             db.close()
 
 
+def playground_run(source: str, stdin_text: str) -> dict:
+    """Execute a visitor's program with the authority model visible.
+
+    No capability grants exist at this endpoint, so every effectful op is
+    structurally denied by the runtime (E4xx) — the denial IS the demo.
+    The grammar is a DAG (no loops), so execution terminates on its own;
+    a node cap and source cap bound the work per request.
+    """
+    try:
+        program = parse_source(source)
+        analysis = analyze(program)
+    except StructuredError as exc:
+        err = {"code": str(exc.code), "detail": exc.detail}
+        if getattr(exc, "allowed_repairs", None):
+            err["allowed_repairs"] = exc.allowed_repairs
+        return {"ok": False, "stage": "validate", "error": err}
+    except Exception as exc:
+        return {"ok": False, "stage": "parse",
+                "error": {"code": "E1xx", "detail": str(exc)}}
+    node_count = len(program.nodes)
+    if node_count > 500:
+        return {"ok": False, "stage": "validate",
+                "error": {"code": "E1xx",
+                          "detail": f"too many nodes "
+                                    f"({node_count} > 500)"}, }
+    payload = {"ok": True,
+               "hash": program_hash(program),
+               "nodes": node_count,
+               "effects": sorted(set(program_effects(program, analysis)))}
+    stdin_buffer = io.StringIO(stdin_text[:4000])
+    stdout_buffer = io.StringIO()
+    with _db_lock:
+        old_in, old_out = sys.stdin, sys.stdout
+        sys.stdin, sys.stdout = stdin_buffer, stdout_buffer
+        try:
+            # emit values come back from execute() (the CLI prints them);
+            # system.write lands in the captured stdout stream
+            result = execute(program, analysis)  # no grants: default-deny
+            output = stdout_buffer.getvalue()
+            emitted = "\n".join(str(v) for v in result)
+            payload["output"] = (output + ("\n" if output and emitted
+                                           else "") + emitted)
+        except StructuredError as exc:
+            output = stdout_buffer.getvalue()
+            emitted = ""
+            payload["output"] = output
+            payload["denied"] = {"code": str(exc.code),
+                                 "detail": exc.detail}
+        finally:
+            sys.stdin, sys.stdout = old_in, old_out
+    return payload
+
+
 class Handler(BaseHTTPRequestHandler):
     def _json(self, obj, status=200):
         body = json.dumps(obj).encode("utf-8")
@@ -176,8 +235,12 @@ class Handler(BaseHTTPRequestHandler):
                         "denied": failed == 1})
         elif path == "/api/health":
             self._json({"ok": True, "engines": sorted(PROGRAMS)})
+        elif path == "/api/playground/example":
+            self._json({"source": HELLO_EXAMPLE.read_text(encoding="utf-8")})
         else:
-            static_name = "index.html" if path == "/" else path.lstrip("/")
+            static_name = ("playground.html" if path == "/playground"
+                           else "index.html" if path == "/"
+                           else path.lstrip("/"))
             if static_name in STATIC:
                 body = (APP_DIR / static_name).read_bytes()
                 self.send_response(200)
@@ -193,6 +256,20 @@ class Handler(BaseHTTPRequestHandler):
             data = self._body()
         except json.JSONDecodeError:
             self._json({"error": "bad json"}, 400)
+            return
+        if self.path == "/api/playground/run":
+            if not isinstance(data, dict):
+                self._json({"error": "bad body"}, 400)
+                return
+            source = data.get("source")
+            if not isinstance(source, str) or not source.strip():
+                self._json({"error": "missing source"}, 400)
+                return
+            if len(source) > 32_000:
+                self._json({"error": "source too large (max 32000 chars)"},
+                           413)
+                return
+            self._json(playground_run(source, str(data.get("stdin", ""))))
             return
         routes = {
             "/api/register": ("register", ["username", "password"]),

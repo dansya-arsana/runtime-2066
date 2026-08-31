@@ -1,0 +1,41 @@
+# list_notes.ai — list the session subject's note titles (M8 collections).
+# in: session_token · out: titles joined by newlines ("" when none)
+
+entity note {
+id identity
+owner_id i64
+title string
+body string
+}
+
+main
+
+node 001
+op system.read
+
+node 002
+op session.verify
+input 001
+output i64
+
+node 003
+op data.list
+entity note
+column title
+where owner_id
+input 002
+output list<string>
+
+node 004
+op const
+type string
+value "\n"
+
+node 005
+op list.join
+input 003 004
+output string
+
+node 006
+op system.write
+input 005

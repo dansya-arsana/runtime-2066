@@ -1,0 +1,228 @@
+# 2066 interactive calculator (one-shot: no loops in V0 — the graph IS the flow).
+# Prompts via system.write, input via system.read, operator dispatch via
+# compare + branch select-tree (2066 has no if-statements — selection is a
+# pure value select), arithmetic in f64, division guarded against zero.
+#
+#   printf "12\n+\n3.5\n" | python -m runtime run examples/calculator.ai
+#   -> a = op = b = result = 15.5
+#
+# Also try: 10 / 0 (guarded), or an unknown operator like % (rejected).
+
+node 001
+op const
+type string
+value "a = "
+
+node 002
+op system.write
+input 001
+
+node 003
+op system.read
+
+node 004
+op const
+type string
+value "op = "
+
+node 005
+op system.write
+input 004
+
+node 006
+op system.read
+
+node 007
+op const
+type string
+value "b = "
+
+node 008
+op system.write
+input 007
+
+node 009
+op system.read
+
+node 010
+op cast
+input 003
+output f64
+
+node 011
+op cast
+input 009
+output f64
+
+node 012
+op add
+input 010 011
+output f64
+
+node 013
+op subtract
+input 010 011
+output f64
+
+node 014
+op multiply
+input 010 011
+output f64
+
+node 015
+op divide
+input 010 011
+output f64
+
+node 016
+op const
+type f64
+value 0.0
+
+node 017
+op compare
+mode ne
+input 011 016
+output bool
+
+node 018
+op branch
+input 017 015 016
+output f64
+
+node 019
+op const
+type string
+value "+"
+
+node 020
+op compare
+mode eq
+input 006 019
+output bool
+
+node 021
+op const
+type string
+value "-"
+
+node 022
+op compare
+mode eq
+input 006 021
+output bool
+
+node 023
+op const
+type string
+value "*"
+
+node 024
+op compare
+mode eq
+input 006 023
+output bool
+
+node 025
+op const
+type string
+value "/"
+
+node 026
+op compare
+mode eq
+input 006 025
+output bool
+
+node 027
+op cast
+input 012
+output string
+
+node 028
+op const
+type string
+value "result = "
+
+node 029
+op concat
+input 028 027
+output string
+
+node 030
+op cast
+input 013
+output string
+
+node 031
+op concat
+input 028 030
+output string
+
+node 032
+op cast
+input 014
+output string
+
+node 033
+op concat
+input 028 032
+output string
+
+node 034
+op cast
+input 018
+output string
+
+node 035
+op concat
+input 028 034
+output string
+
+node 036
+op const
+type string
+value "error: division by zero"
+
+node 037
+op const
+type string
+value "error: invalid operator"
+
+node 038
+op branch
+input 017 035 036
+output string
+
+node 039
+op branch
+input 026 038 037
+output string
+
+node 040
+op branch
+input 024 033 039
+output string
+
+node 041
+op branch
+input 022 031 040
+output string
+
+node 042
+op branch
+input 020 029 041
+output string
+
+node 043
+op system.write
+input 042
+
+node 044
+op const
+type string
+value "\n"
+
+node 045
+op system.write
+input 044

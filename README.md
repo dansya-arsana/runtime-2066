@@ -59,6 +59,20 @@ that changes the grammar or semantics produces different canonical hashes
 and must not be called 2066 unless it passes the project's conformance
 suite. `runtime-2066` on PyPI is the canonical distribution.
 
+## MCP server — give your AI agent 2066 tools
+
+`pip install runtime-2066` ships an MCP stdio server. Point any MCP
+client at it (Claude Desktop / Claude Code `claude_desktop_config.json`):
+
+```json
+{ "mcpServers": { "2066": { "command": "2066-mcp" } } }
+```
+
+The agent gets `2066_calculate` (pure, guarded arithmetic) plus a
+capability-gated notes data plane (`2066_notes_register/login/add/get/
+list`) with signed, expiring, revocable sessions. Session-mint keys live
+in `~/.2066/mcp/` — never in site-packages.
+
 ## Quickstart
 
 ```bash

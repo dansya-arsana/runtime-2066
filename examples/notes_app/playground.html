@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2066 Playground — run .ai live</title>
+<style>
+  :root { --bg:#0d1117; --panel:#161b22; --border:#30363d; --text:#e6edf3;
+          --dim:#8b949e; --accent:#58a6ff; --ok:#3fb950; --err:#f85149; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+         font:14px/1.5 "Segoe UI",system-ui,sans-serif; }
+  header { padding:20px 24px 8px; }
+  header h1 { margin:0; font-size:20px; }
+  header p { margin:4px 0 0; color:var(--dim); max-width:860px; }
+  header code { color:var(--accent); }
+  main { padding:12px 24px 40px; display:grid; gap:16px;
+         grid-template-columns:1fr 1fr; max-width:1200px; }
+  @media (max-width:900px){ main { grid-template-columns:1fr; } }
+  .panel { background:var(--panel); border:1px solid var(--border);
+           border-radius:8px; padding:14px; }
+  .panel h2 { margin:0 0 8px; font-size:13px; text-transform:uppercase;
+              letter-spacing:.06em; color:var(--dim); }
+  textarea { width:100%; background:var(--bg); color:var(--text);
+             border:1px solid var(--border); border-radius:6px;
+             font:13px/1.5 ui-monospace,Consolas,monospace;
+             padding:10px; resize:vertical; }
+  #source { min-height:260px; }
+  #stdin  { min-height:48px; margin-top:8px; }
+  button { margin-top:10px; background:var(--accent); color:#0d1117;
+           border:0; border-radius:6px; padding:8px 18px; font-weight:600;
+           font-size:14px; cursor:pointer; }
+  button:disabled { opacity:.5; cursor:wait; }
+  .out { background:var(--bg); border:1px solid var(--border);
+         border-radius:6px; padding:10px; min-height:60px; white-space:pre-wrap;
+         font:13px/1.5 ui-monospace,Consolas,monospace; }
+  .ok  { color:var(--ok); }
+  .err { color:var(--err); }
+  .dim { color:var(--dim); }
+  a { color:var(--accent); text-decoration:none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>2066 Playground</h1>
+  <p>Write a <code>.ai</code> semantic program and run it on a real 2066
+     runtime — the same deterministic engine behind
+     <a href="/">the notes app</a> and the
+     <a href="https://github.com/dansya-arsana/runtime-2066">runtime</a>.
+     Authority here is <code>default-deny</code>: the program gets no
+     capability grants, so effectful ops (files, data, sessions) are denied
+     live — wire a <code>filesystem.read</code> from a const and watch the
+     structured refusal.
+     No AI model is involved anywhere: validation is mechanical.</p>
+</header>
+<main>
+  <section class="panel">
+    <h2>Program (.ai)</h2>
+    <textarea id="source" spellcheck="false">loading…</textarea>
+    <h2 style="margin-top:12px">stdin (one value per line)</h2>
+    <textarea id="stdin" spellcheck="false"></textarea>
+    <button id="run">▶ Run</button>
+    <span id="status" class="dim" style="margin-left:10px"></span>
+  </section>
+  <section>
+    <div class="panel">
+      <h2>Output</h2>
+      <div class="out" id="output">—</div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <h2>Authority &amp; identity</h2>
+      <div class="out" id="meta">—</div>
+    </div>
+  </section>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+fetch('/api/playground/example').then(r=>r.json()).then(d=>{ $('source').value = d.source; });
+
+$('run').onclick = async () => {
+  $('run').disabled = true; $('status').textContent = 'running…';
+  try {
+    const r = await fetch('/api/playground/run', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ source: $('source').value, stdin: $('stdin').value })});
+    const d = await r.json();
+    render(d);
+  } catch (e) { $('output').textContent = 'request failed: ' + e; }
+  $('run').disabled = false; $('status').textContent = '';
+};
+
+function render(d) {
+  const out = $('output'), meta = $('meta');
+  if (!d.ok) {
+    out.innerHTML = '';
+    const p = document.createElement('div'); p.className = 'err';
+    p.textContent = `${d.error.code}  (${d.stage})  ${d.error.detail}`;
+    out.appendChild(p);
+    if (d.error.allowed_repairs) {
+      const r = document.createElement('div'); r.className = 'dim';
+      r.textContent = 'allowed_repairs: ' + d.error.allowed_repairs.join(', ');
+      out.appendChild(r);
+    }
+    meta.textContent = '—';
+    return;
+  }
+  out.textContent = d.output !== '' ? d.output : '(no output)';
+  out.className = 'out' + (d.denied ? '' : ' ok');
+  meta.innerHTML = '';
+  const rows = [
+    ['canonical hash', d.hash],
+    ['nodes', d.nodes],
+    ['declared effects', (d.effects||[]).join(', ') || 'none'],
+    ['authority', 'default-deny — no capability grants at this endpoint'],
+  ];
+  if (d.denied) rows.push(['denied live', `${d.denied.code}  ${d.denied.detail}`]);
+  for (const [k,v] of rows) {
+    const line = document.createElement('div');
+    const kEl = document.createElement('span'); kEl.className='dim'; kEl.textContent = k + ': ';
+    line.appendChild(kEl);
+    line.appendChild(document.createTextNode(v));
+    if (k === 'denied live') line.className = 'err';
+    meta.appendChild(line);
+  }
+}
+</script>
+</body>
+</html>

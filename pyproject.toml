@@ -41,9 +41,10 @@ Whitepaper = "https://github.com/dansya-arsana/runtime-2066/blob/main/WHITEPAPER
 
 [project.scripts]
 2066 = "runtime.cli:main"
+2066-mcp = "runtime.mcp_server:main"
 
 [tool.setuptools.packages.find]
 include = ["runtime*"]
 
 [tool.setuptools.package-data]
-runtime = ["py.typed"]
+runtime = ["py.typed", "programs/*.ai", "programs/*.json"]
