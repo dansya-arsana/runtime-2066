@@ -7,92 +7,223 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header>
-  <h1>2066 <span>Sales</span></h1>
-  <div class="tagline">every write is a verified .ai program — denied = no-op</div>
-  <div id="who" class="who"></div>
-</header>
 
-<section id="auth" class="card">
-  <h2>Sign in</h2>
-  <div class="row">
-    <input id="username" placeholder="username" autocomplete="username">
-    <input id="password" type="password" placeholder="password" autocomplete="current-password">
+<!-- ============ AUTH ============ -->
+<div id="auth" class="auth-wrap">
+  <div class="auth-ambient" aria-hidden="true"></div>
+  <div class="auth-card">
+    <div class="brand">
+      <span class="brand-mark">2</span>
+      <div>
+        <div class="brand-name">2066 Sales</div>
+        <div class="brand-sub">verified pipeline · zero-model decisions</div>
+      </div>
+    </div>
+    <h1>Sign in to your pipeline</h1>
+    <p class="auth-lead">Every stage change, score, and write is a deterministic
+    <code>.ai</code> program — denied means nothing happened.</p>
+    <form id="auth-form" onsubmit="return authSubmit(event)">
+      <label for="username">Username</label>
+      <input id="username" autocomplete="username" placeholder="e.g. sales_rep" required>
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password"
+             placeholder="min 8 characters" required minlength="8">
+      <button id="auth-btn" class="btn primary block" type="submit">Sign in</button>
+      <div id="auth-msg" class="form-msg" role="alert"></div>
+    </form>
+    <div class="auth-foot">New here? <a href="#" onclick="toggleMode(); return false">Create an account</a>
+      · <span id="mode-label">sign in mode</span></div>
   </div>
-  <div class="row">
-    <button onclick="register()">Register</button>
-    <button class="primary" onclick="login()">Login</button>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app" hidden>
+  <header class="topbar">
+    <div class="brand sm">
+      <span class="brand-mark">2</span>
+      <span class="brand-name">2066 Sales</span>
+    </div>
+    <span class="pill ok" title="15 engines compiled & validated at startup">✓ engines verified</span>
+    <div class="top-right">
+      <span id="who" class="who"></span>
+      <button class="btn ghost sm" onclick="logout()">Sign out</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <!-- KPI row -->
+    <section class="kpis" id="kpis"></section>
+
+    <!-- Funnel -->
+    <section class="card">
+      <div class="card-head">
+        <h2>Pipeline funnel</h2>
+        <span class="hint">counted in-graph by <code>funnel.ai</code></span>
+      </div>
+      <div id="funnel-bar" class="funnel-bar"></div>
+      <div id="funnel-legend" class="funnel-legend"></div>
+    </section>
+
+    <div class="grid-2">
+      <!-- Opportunities -->
+      <section class="card">
+        <div class="card-head">
+          <h2>Opportunities</h2>
+          <button class="btn primary sm" onclick="openModal('modal-opp')">+ New</button>
+        </div>
+        <div class="table-scroll">
+          <table class="tbl" id="opp-table">
+            <thead><tr><th>Deal</th><th>Stage</th><th>Value</th><th>Next action</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div class="empty" data-empty-for="opp-table">
+            <div class="empty-icon">◈</div>
+            <b>No opportunities yet</b>
+            <span>Create one against one of your businesses — the stage
+            machine in <code>opp_stage.ai</code> enforces every move.</span>
+          </div>
+        </div>
+        <div class="hint">path: new → qualified → proposal → won / lost (terminal) · owner-only · from-stage must match</div>
+      </section>
+
+      <!-- Businesses -->
+      <section class="card">
+        <div class="card-head">
+          <h2>Businesses</h2>
+          <div class="head-actions">
+            <button class="btn sm" onclick="discoverOSM()">Discover via OSM</button>
+            <button class="btn primary sm" onclick="openModal('modal-biz')">+ Add</button>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table class="tbl" id="biz-table">
+            <thead><tr><th>Business</th><th>City</th><th>Score</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div class="empty" data-empty-for="biz-table">
+            <div class="empty-icon">◈</div>
+            <b>No businesses yet</b>
+            <span>Add one manually or run OSM discovery — scoring is the
+            program's formula, never a model's opinion.</span>
+          </div>
+        </div>
+        <div class="hint">score = tier×30 + website×20 + phone×10 — same input, same score, everywhere</div>
+      </section>
+
+      <!-- Follow-ups -->
+      <section class="card">
+        <div class="card-head">
+          <h2>Follow-ups</h2>
+          <button class="btn primary sm" onclick="openModal('modal-fu')">+ Schedule</button>
+        </div>
+        <div class="table-scroll">
+          <table class="tbl" id="fu-table">
+            <thead><tr><th>Action</th><th>Due</th><th>Status</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div class="empty" data-empty-for="fu-table">
+            <div class="empty-icon">◈</div>
+            <b>Nothing scheduled</b>
+            <span>Follow-ups keep the pipeline honest — close them with
+            <code>fu_done.ai</code> when done.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Activity -->
+      <section class="card">
+        <div class="card-head">
+          <h2>Activity log</h2>
+          <button class="btn primary sm" onclick="openModal('modal-act')">+ Log</button>
+        </div>
+        <ul id="acts" class="timeline"></ul>
+        <div class="empty" data-empty-for="acts">
+          <div class="empty-icon">◈</div>
+          <b>No activity yet</b>
+          <span>Calls, visits, notes — every entry passes through
+          <code>act_add.ai</code>.</span>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- ============ MODALS ============ -->
+<div class="overlay" id="modal-biz" hidden>
+  <div class="modal">
+    <div class="modal-head"><h3>Add business</h3>
+      <button class="btn ghost sm" onclick="closeModal('modal-biz')">✕</button></div>
+    <label>Name *</label><input id="b-name" placeholder="Warung Bu Sari">
+    <div class="two">
+      <div><label>Category</label><input id="b-cat" placeholder="cafe, restaurant…"></div>
+      <div><label>City</label><input id="b-city" placeholder="Bandung"></div>
+    </div>
+    <div class="two">
+      <div><label>Phone</label><input id="b-phone" placeholder="optional"></div>
+      <div><label>Website</label><input id="b-web" placeholder="optional"></div>
+    </div>
+    <label>Tier</label>
+    <select id="b-tier">
+      <option value="1">tier 1 — small</option>
+      <option value="2" selected>tier 2 — medium</option>
+      <option value="3">tier 3 — large</option>
+    </select>
+    <div class="modal-foot">
+      <button class="btn ghost" onclick="closeModal('modal-biz')">Cancel</button>
+      <button class="btn primary" onclick="addBusiness()">Add business</button>
+    </div>
   </div>
-  <div id="auth-msg" class="msg"></div>
-</section>
+</div>
 
-<main id="app" hidden>
-  <section class="card">
-    <h2>Funnel</h2>
-    <div id="funnel" class="funnel"></div>
-  </section>
+<div class="overlay" id="modal-opp" hidden>
+  <div class="modal">
+    <div class="modal-head"><h3>New opportunity</h3>
+      <button class="btn ghost sm" onclick="closeModal('modal-opp')">✕</button></div>
+    <label>Business *</label><select id="o-bid"></select>
+    <label>Title *</label><input id="o-title" placeholder="POS bundle">
+    <label>Need</label><input id="o-need" placeholder="what problem does this solve?">
+    <div class="two">
+      <div><label>Value (IDR)</label><input id="o-value" type="number" min="0" placeholder="5000"></div>
+      <div><label>Next action</label><input id="o-action" placeholder="demo visit"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" onclick="closeModal('modal-opp')">Cancel</button>
+      <button class="btn primary" onclick="addOpp()">Create</button>
+    </div>
+  </div>
+</div>
 
-  <section class="card">
-    <h2>Discover / add business</h2>
-    <div class="row">
-      <input id="b-name" placeholder="name">
-      <input id="b-cat" placeholder="category (cafe, workshop...)" style="flex:1.4">
-      <input id="b-city" placeholder="city">
+<div class="overlay" id="modal-act" hidden>
+  <div class="modal">
+    <div class="modal-head"><h3>Log activity</h3>
+      <button class="btn ghost sm" onclick="closeModal('modal-act')">✕</button></div>
+    <label>Business *</label><select id="a-bid"></select>
+    <div class="two">
+      <div><label>Type</label><input id="a-type" placeholder="call, visit…"></div>
+      <div><label>Notes</label><input id="a-notes" placeholder="what happened?"></div>
     </div>
-    <div class="row">
-      <input id="b-phone" placeholder="phone (optional)">
-      <input id="b-web" placeholder="website (optional)">
-      <select id="b-tier">
-        <option value="1">tier 1 — small</option>
-        <option value="2" selected>tier 2 — medium</option>
-        <option value="3">tier 3 — large</option>
-      </select>
-      <button class="primary" onclick="addBusiness()">Add</button>
+    <div class="modal-foot">
+      <button class="btn ghost" onclick="closeModal('modal-act')">Cancel</button>
+      <button class="btn primary" onclick="addActivity()">Log</button>
     </div>
-    <div class="hint">score = tier×30 + website×20 + phone×10 — computed in the graph, deterministic</div>
-    <table id="biz-table"><thead><tr>
-      <th>id</th><th>name</th><th>city</th><th>category</th>
-      <th>score</th><th>stage</th><th></th>
-    </tr></thead><tbody></tbody></table>
-  </section>
+  </div>
+</div>
 
-  <section class="card">
-    <h2>Opportunities</h2>
-    <div class="row">
-      <input id="o-bid" placeholder="business id" style="max-width:110px">
-      <input id="o-title" placeholder="title">
-      <input id="o-need" placeholder="need" style="flex:1.4">
-      <input id="o-value" placeholder="value" style="max-width:90px">
-      <input id="o-action" placeholder="next action" style="flex:1.2">
-      <button class="primary" onclick="addOpp()">Add</button>
+<div class="overlay" id="modal-fu" hidden>
+  <div class="modal">
+    <div class="modal-head"><h3>Schedule follow-up</h3>
+      <button class="btn ghost sm" onclick="closeModal('modal-fu')">✕</button></div>
+    <label>Business *</label><select id="f-bid"></select>
+    <label>Action *</label><input id="f-action" placeholder="send proposal deck">
+    <label>Due date</label><input id="f-due" type="date">
+    <div class="modal-foot">
+      <button class="btn ghost" onclick="closeModal('modal-fu')">Cancel</button>
+      <button class="btn primary" onclick="addFollowup()">Schedule</button>
     </div>
-    <table id="opp-table"><thead><tr>
-      <th>id</th><th>title</th><th>stage</th><th>value</th>
-      <th>next action</th><th>advance</th>
-    </tr></thead><tbody></tbody></table>
-    <div class="hint">state machine lives in opp_stage.ai: new → qualified → proposal → won|lost (terminal), owner-only, from-stage must match</div>
-  </section>
+  </div>
+</div>
 
-  <section class="card">
-    <h2>Activity &amp; follow-ups</h2>
-    <div class="row">
-      <input id="a-bid" placeholder="business id" style="max-width:110px">
-      <input id="a-type" placeholder="type (call, visit...)">
-      <input id="a-notes" placeholder="notes" style="flex:2">
-      <button onclick="addActivity()">Log activity</button>
-    </div>
-    <div class="row">
-      <input id="f-bid" placeholder="business id" style="max-width:110px">
-      <input id="f-action" placeholder="action" style="flex:1.4">
-      <input id="f-due" placeholder="due (2026-09-30)">
-      <button onclick="addFollowup()">Schedule follow-up</button>
-    </div>
-    <div id="acts" class="acts"></div>
-    <table id="fu-table"><thead><tr>
-      <th>action</th><th>due</th><th>status</th><th></th>
-    </tr></thead><tbody></tbody></table>
-  </section>
-</main>
+<div id="toasts" class="toasts" aria-live="polite"></div>
 <script src="app.js"></script>
 </body>
 </html>

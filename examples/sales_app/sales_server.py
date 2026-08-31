@@ -85,7 +85,7 @@ GRANTS = GrantSet.from_file(CAPS)
 PROGRAMS = {}
 for name in ("register", "login", "biz_add", "biz_list", "biz_ids",
              "opp_add", "opp_list", "opp_ids", "opp_stage",
-             "act_add", "act_list", "fu_add", "fu_list", "fu_done",
+             "act_add", "act_list", "fu_add", "fu_list", "fu_ids", "fu_done",
              "funnel"):
     program = parse_source((APP_DIR / f"{name}.ai").read_text(
         encoding="utf-8"))
@@ -161,9 +161,11 @@ def _rows(token: str) -> dict:
         {"type": t, "notes": n} for t, n in zip(types, notes)]
     text, _ = _execute("fu_list", [token])
     actions, dues, statuses = _csv_lines(text, 3)
+    fu_ids = _execute("fu_ids", [token])[1]
     out["followups"] = [
-        {"action": a, "due": d, "status": s}
-        for a, d, s in zip(actions, dues, statuses)]
+        {"id": i, "action": a, "due": d, "status": s}
+        for i, a, d, s in zip(fu_ids[0] if fu_ids else [],
+                              actions, dues, statuses)]
     funnel, _ = _execute("funnel", [token])
     out["funnel"] = dict(zip(
         ("businesses", "new", "qualified", "proposal", "won", "lost",
@@ -253,6 +255,31 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"token": _mint(subject_id)})
             return
         self._json({"result": result})
+
+    def _discover(self, q: dict) -> dict:
+        """OSM discovery: candidates are fed through the VERIFIED
+        biz_add engine — rejected candidates leave zero rows."""
+        sys.path.insert(0, str(ROOT / "examples" / "sales_app"))
+        import discover_osm
+        token = q.get("token", "")
+        added = rejected = 0
+        try:
+            candidates = discover_osm.discover(
+                q.get("city", ""), q.get("category", ""),
+                int(q.get("limit", "8")))
+        except Exception as exc:
+            return {"error": f"discovery failed: {exc}"}
+        for c in candidates:
+            result, _ = _execute("biz_add",
+                                 [token, c["name"], q.get("category", ""),
+                                  c["city"], c["phone"], c["website"],
+                                  "2" if c["website"] else "1"])
+            if result.startswith("ok:"):
+                added += 1
+            else:
+                rejected += 1
+        return {"candidates": len(candidates), "added": added,
+                "rejected": rejected}
 
     def log_message(self, fmt, *args):  # keep the console calm
         pass
