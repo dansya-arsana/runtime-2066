@@ -111,6 +111,20 @@ python -m runtime effects program.ai
 programs with functions. A manifest requiring nothing beyond `PURE` and
 `SYSTEM` cannot touch your disk — by construction.
 
+## 5b. Network egress (`net.request`)
+
+Outbound requests are an allowlist by hostname:
+
+```json
+{"action": "net.request", "resource": "dev-api.arsana.cloud"}
+```
+
+A program's `net.fetch` may only reach granted hosts (a grant on a
+parent domain covers its subdomains); the transport is supplied by the
+host, so the runtime itself owns no sockets. Requests to ungranted
+hosts fail closed with E401 before any bytes leave (tested in
+tests/security).
+
 ## 6. Threat-model honesty
 
 Current known gaps (see [THREAT_MODEL.md](../THREAT_MODEL.md)): unsigned

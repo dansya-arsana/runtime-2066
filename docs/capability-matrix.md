@@ -1,4 +1,4 @@
-# Capability Matrix — what 2066 can and cannot do (v1.2.0, honest)
+# Capability Matrix — what 2066 can and cannot do (v1.3.0, honest)
 
 Compared against conventional languages (Python/JavaScript as the
 baseline for "normal"), organized by what matters when an AI agent
@@ -39,7 +39,7 @@ this document).
 | Read/write files | ✅ | capability-gated, scope-matched, size-limited, pre-write checks |
 | SQLite database (CRUD + list) | ✅ | `data.*` — runtime-written parameterized SQL; injection-inert |
 | Schema migrations | ✅ | additive auto-applied; destructive refused with data-loss report |
-| HTTP client | ❌ | no network effects yet |
+| HTTP client (outbound GET) | ✅ | `net.fetch` — hostname-allowlisted by `net.request` grants; transport host-supplied; E560 on failure |
 | HTTP server | ⚠️ | shell provides it; programs expose pure/auth logic |
 | Spawn processes / shell | ❌ | forbidden (§20) — and there is no op to do it |
 | Env variables / secrets in program | ❌ | forbidden — authority enters via grants only |
@@ -66,7 +66,9 @@ this document).
 |---|---|---|
 | Revision cycle cost (validate+effects+hash) | **1 spawn, ~80 ms** (`check`) | N/A — trust is manual review |
 | Engine change → both backends regenerated | 3.7 ms | rewrite both by hand |
-| Full verification suite | 265 tests, ~13 s | manual QA per artifact |
+| Full verification suite | 394 tests, ~30 s | manual QA per artifact |
+| Context to modify a unit safely | **~2.2 KB** (`2066 context` card + unit) vs ~21 KB file-reading — **9.5× less** (measured, benchmarks/context_efficiency.py) | read files until it feels safe |
+| Second implementation agreeing on identity | ✅ Rust canonicalizer, 28/28 corpus hashes identical | n/a — one implementation is the truth |
 | Structured first-draft errors | ✅ code/node/expected/received/repairs | stack traces or silent bugs |
 | Determinism (same input → same output) | ✅ byte-identical | usually, but error paths differ |
 | Engine authoring token cost | ~9× higher on this benchmark | 1× |
@@ -90,20 +92,25 @@ this document).
 ## 6. Cannot do — the honest list
 
 1. **Anything iterative** — no loops; batch = one-shot or shell-driven repetition.
-2. **Anything stateful in-memory** — state lives in SQLite or the session layer.
-3. **Anything networked from inside a program** — servers are shells; programs stay pure.
+2. **Anything stateful in-memory** — state lives in SQLite/memory adapters or the session layer.
+3. **Arbitrary networking from inside a program** — outbound GET to
+   *allowlisted* hosts only (`net.fetch`); no listeners, no arbitrary
+   protocols. Servers are shells; programs decide, hosts transmit.
 4. **Anything with rich text/data manipulation** — no split/regex/format strings beyond canonical rendering.
 5. **Anything requiring speed in-runtime** — use the exported artifacts for hot paths (0.09 ms vs 4.7 ms on 10k ops).
 6. **Anything requiring a human to be trusted** — the human is the *root*, but the runtime verifies even human-signed files for scope/expiry/limits.
-7. **Transport/network distribution of programs** — proposals and evidence are local files; the network layer (Appendix E) is unbuilt.
+7. **Transport/network distribution of programs** — proposals and evidence are local/signed artifacts; the multi-machine transport layer (Appendix E) is unbuilt. Offline *bundles* exist (signed, hash-verified) — a network does not.
 
 ## Bottom line
 
-2066 today is a **verified computation + authority core**: it excels at
-deterministic, auditable, permission-bounded logic — calculators, rules
-engines, auth flows, data validation, DB transactions. It cannot yet
-express general-purpose software (loops, rich collections, networking,
-text processing), and its authoring cost is ~9× a conventional language
-by tokens. Those are the boundaries the roadmap attacks next:
-iteration design, transport layer, and richer collections — in that
-order, because each unlocks the next.
+2066 today is a **verified computation + authority core with release
+engineering**: it excels at deterministic, auditable,
+permission-bounded logic — calculators, rules engines, auth flows, data
+validation, DB transactions, allowlisted egress — and it ships with the
+sovereign kit (SBOM, signed releases, reproducible wheel, offline
+bundles). It cannot yet express general-purpose software (loops, rich
+collections, listeners, text processing), and its authoring cost is ~9×
+a conventional language by tokens. Those are the boundaries the roadmap
+attacks next: the Rust second runtime, iteration design, the transport
+layer, and richer collections — in that order, because each unlocks the
+next.

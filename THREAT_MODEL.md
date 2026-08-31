@@ -59,3 +59,21 @@ mistakes this runtime for the fully secured 2066.
 Every new effectful operation must land with: an effect classification, a
 capability action, scope/limit/expiry enforcement in **both** adapters, and
 denial tests — or it does not merge (roadmap §20 forbidden defaults).
+
+## Surfaces added in the hardening cycle (H0–H8 seed)
+
+- **Outbound egress (`net.fetch`)**: hostname-allowlisted by
+  `net.request` grants; the runtime owns no sockets (transport is
+  host-injected); denied hosts fail closed with zero calls (tested).
+  Residual: DNS/IP-level tunneling inside an ALLOWED host is out of
+  scope — the allowlist is by name, not content.
+- **Semantic addresses**: `package::module::unit` resolution is
+  identifier-validated before any filesystem use; traversal payloads
+  are refused (tested).
+- **Update bundles / releases**: signed envelope + per-file hashes;
+  install is verify-everything-then-copy and records evidence.
+  Residual: trust roots the operator's key hygiene.
+- **Known, documented**: unsigned grants accepted in development
+  profile only (fuzz-pinned); single-machine evidence chains detect
+  edits, not deletion.
+

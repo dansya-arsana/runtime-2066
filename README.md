@@ -4,7 +4,10 @@
 
 **Status: 1.4 — Stages A–D complete: full-stack apps, capability
 authority, multisig + delegation chains, MCP tools, reputation +
-red-team verification. 335 tests green.**
+red-team verification, semantic packages, signed releases,
+SBOM, offline update bundles — and a second, independent
+Rust implementation agreeing on every canonical hash.
+**394 tests green.**
 
 2066 is not a programming language for humans. It is an AI-native semantic
 execution layer: AI agents author **semantic graphs**, a deterministic
@@ -249,7 +252,7 @@ python -m runtime run examples/file_read.ai --caps ok.json --require-signed
 python -m runtime run examples/arithmetic.ai --json
 python -m runtime repair examples/compound_interest_error.ai --json
 
-# deterministic test suite (177 tests, incl. a 2,000-node stress graph and
+# deterministic test suite (394 tests, incl. a 2,000-node stress graph and
 # node-verified JavaScript exports)
 python -m unittest discover -v
 

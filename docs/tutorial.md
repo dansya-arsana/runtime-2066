@@ -309,3 +309,12 @@ authority plane.
 - [Operations reference](operations.md) — every built-in operation.
 - [Capabilities guide](capabilities-guide.md) — grant files, signing, scoping.
 - `examples/` — the calculator app and the full-stack notes app.
+
+## Where to go next: semantic packages
+
+Real applications ship as packages under `programs/` with semantic
+addresses (`sales::business::add`). See [packages.md](packages.md) and
+try `python -m runtime list` and `python -m runtime inspect
+sales::business::add` — that card is how agents work with programs
+without browsing files.
+

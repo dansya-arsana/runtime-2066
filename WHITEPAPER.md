@@ -1,6 +1,6 @@
 # 2066 — An AI-Native Semantic Execution and Authority Layer
 
-**White Paper · v1.1.0 · August 2026**
+**White Paper · v1.2.0 · August 2026**
 
 > *2066 is an open execution layer where untrusted autonomous agents may
 > construct, mutate, and run software — and deterministic semantics,
@@ -401,10 +401,16 @@ A white paper that hides its losses is marketing. Measured and admitted:
 4. **Any-disk keys are bearer objects.** PIN encryption protects at
    rest; whole-disk imaging plus offline brute-force of a weak PIN is
    outside the model. Real secure elements arrive at Phase 10.
-5. **Unsigned grant files remain accepted by default** (transition
-   period); `--require-signed` opts into refusal.
-6. **No network layer yet.** Everything runs in one process or one
-   machine; transport independence (Appendix E) is unimplemented.
+5. **Unsigned grant files remain accepted in the development profile**
+   (transition period); production and sovereign profiles refuse them
+   unconditionally (`--profile production|sovereign`), and fuzzing
+   proved the transition hole is real — which is why the profiles
+   exist. Before any open deployment, unsigned acceptance is removed.
+6. **Outbound network exists, transport does not.** Programs may call
+   external services via `net.fetch` (hostname-allowlisted,
+   host-supplied transport) — used live against a production API — but
+   there is no message envelope, LAN/Tor, or multi-machine protocol
+   yet (Appendix E remains unimplemented).
 7. **Evidence chains detect tampering, not exfiltration** — an attacker
    who can delete the entire log destroys it (single-machine scope).
    Distributed anchoring is future work.
@@ -445,21 +451,29 @@ compute prices declining, not with them rising.
 
 ## 10. Current Status and Roadmap
 
-Implemented and tested (265 deterministic tests; nine milestones;
-v1.1.0): canonical IR + hashing, dual engines, structured repair,
-capability-gated filesystem and SQLite data runtime with migrations
-(destructive changes refused), agent identity and signed grants,
-sessions, evidence chains, any-disk human keys, multi-agent proposals
-with deterministic merge, list values, Python/JS export, a
-browser-verified full-stack application (auth + database + ownership
-enforcement) at sub-millisecond request cost, human and machine
-documentation with drift-detection, and a standalone frozen binary
-requiring no host toolchain.
+Implemented and tested (394 deterministic tests; protocol 0.2;
+runtime v1.4.1): canonical IR + hashing, dual execution engines plus a
+differentially-proven second storage adapter, structured repair,
+capability-gated filesystem, data, and outbound-network effects,
+guarded writes (`when` — denied mutations are verified no-ops), agent
+identity and signed grants, sessions, evidence chains, any-disk human
+keys, multisig and delegation chains, multi-agent proposals with
+deterministic merge, list values, Python/JS export, semantic packages
+(`sales::business::add` addressing, `2066 inspect` context cards),
+a browser-verified full-stack sales application deployed live on its
+own VPS with TLS and cron, deployment profiles (development /
+production / sovereign), SBOM + signed releases + reproducible wheel +
+verified offline update bundles, property and fuzz suites over every
+trust loader, a security/adversarial attack matrix, and the start of
+an **independent Rust implementation** whose canonicalizer reproduces
+every corpus hash byte-identically.
 
-Queued, in order: transport independence (signed semantic messages
-over LAN/offline bundles); multisig grants (m-of-n key disks);
-termination-preserving iteration; a WASI adapter at the capability
-boundary; the open contribution network; compute credits; Genesis.
+Queued, in order: complete the Rust runtime (validator, semantics,
+capability verifier — the canonicalizer was the first strangler step);
+FIDO2 human authority; transport independence (signed semantic
+messages over LAN/offline bundles); termination-preserving iteration;
+a WASI adapter at the capability boundary; the open contribution
+network; compute credits; Genesis.
 
 ---
 

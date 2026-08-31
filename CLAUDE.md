@@ -1,8 +1,10 @@
 # CLAUDE.md — 2066 Project Guide
 
-> **Last updated: 2026-08-31 (late) — hardening H0–H7 done
-> (property+fuzz suites, backup/restore, SBOM, signed releases,
-> reproducible wheel, protocol version 0.2).
+> **Last updated: 2026-08-31 (night) — WHOLE-PLAN hardening pass
+> complete: H0–H7 + H8 seed (independent Rust canonicalizer,
+> 28/28 corpus hashes identical), protocol header, memory store
+> + ports, sovereign profile, offline bundles, security/
+> adversarial suites, ADRs + spec completion. 394 tests.**
 > semantic packages (`2066 list`/`inspect`), repo boundaries
 > (programs/apps/policies/protocol), production profile, frozen
 > conformance corpus. 353 tests green. Baseline tag:
@@ -36,7 +38,7 @@ python -m runtime run examples/hello.ai
 # agent fast-path: validate + effects + hash in one call
 python -m runtime check examples/calculator.ai --json
 
-# full test suite (335 tests, ~25s)
+# full test suite (394 tests, ~30s)
 python -m unittest discover
 
 # machine-readable language reference for AI agents
@@ -92,7 +94,7 @@ E:\Genesis\2066\
 ├── spec/                       # normative specs (graph, instructions, types, errors, identity, hardware-key, key-copying)
 ├── docs/                       # human docs (tutorial, language-ref, operations, CLI, capabilities, capability-matrix, philosophy, job-done, index)
 │   └── ai/                     # agent docs (AGENT_MANUAL.md + reference.json)
-├── tests/runtime/              # 28 test files, 335 tests
+├── tests/runtime/              # core runtime tests
 ├── examples/
 │   ├── hello.ai                # canonical hello world
 │   ├── calculator.ai           # interactive 4-op calculator (stdin/stdout)
@@ -239,7 +241,7 @@ python -m runtime selftest                         # quick health check
 | Native JS (V8) | 0.01 ms |
 | 2066 interpreter (tree) | 4.7 ms |
 | Agent revision cycle (check) | 81 ms (3.1× faster than 3 spawns) |
-| Full verification suite | 335 tests in ~25s |
+| Full verification suite | 394 tests in ~30s |
 | Authoring token cost | ~9× hand-written Python (579 vs 65 tokens) |
 | Notes app request latency | 0.9 ms (persistent runtime) |
 

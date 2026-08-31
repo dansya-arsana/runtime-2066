@@ -78,3 +78,26 @@ payload, so an agent's per-revision contract is one call: draft →
 
 265 → 281 (new: F1/F2/F3 regression tests, `check` CLI tests). Suite
 remains deterministic; full run ~14 s.
+
+---
+
+## Postscript — hardening-cycle verification (2026-08-31)
+
+The original audit above predates the H-cycle. Since then, verification
+became continuous instead of periodic:
+
+- **Property suite**: canonicalization idempotence, hash stability
+  across formatting, sign→verify round-trips, grants-cannot-widen.
+- **Fuzz campaign** (grant loader, signed envelopes, proposals,
+  evidence chains, package manifests — 980+ mutants, all classified):
+  found and fixed `verify_evidence` crashing on corrupt lines; pinned
+  the unsigned-envelope transition hole.
+- **Adversarial suite**: hostile .ai programs (escalation, guard
+  bypass, identity forgery) — found and fixed forged tokens crashing
+  `session.verify` (shadowed import in an except clause).
+- **Security matrix**: SQL injection (parameterized values), path
+  traversal (addresses + fs scopes), replay, impersonation, egress
+  boundary — 9 attacks, all structured refusals.
+- **Independent implementation**: the Rust canonicalizer agrees with
+  the Python oracle on all 28 corpus hashes.
+

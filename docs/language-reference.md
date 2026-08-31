@@ -31,6 +31,18 @@ Two sources with the same hash are the same program, whatever text they
 were written as. Use `python -m runtime repair` to output the canonical
 form of a repaired program.
 
+### Program headers (optional)
+
+```text
+format-version 1
+protocol 0.2
+```
+
+`format-version` must match the runtime's file format (E109). `protocol`
+declares the protocol semver the program targets; a runtime outside the
+compatible range refuses to run it (E109) — never silently misreads it
+(plan §30).
+
 ## 2. Nodes
 
 ```text
@@ -166,3 +178,18 @@ usage/trust, 4 denied. Full table: [spec/errors.md](../spec/errors.md).
 
 Not (yet) in the language: loops, collections, string interpolation,
 network/process effects. See [ROADMAP.md](../ROADMAP.md).
+
+## 9. Effectful operations beyond data
+
+- `net.fetch` (NETWORK effect): outbound GET on the input URL string →
+  body string. Egress is an allowlist: a `net.request` grant names the
+  hostname (a grant on a parent domain covers its subdomains). The
+  host supplies the transport; the runtime owns no sockets. Failures
+  are E560.
+- **Guarded writes** — `data.insert` / `data.update` / `data.delete`
+  accept `when <bool-node>`: a false guard is a verified no-op (0
+  rows, no effect). Because `branch` is eager, guards are THE way to
+  make denied mutations impossible, not hidden in untaken arms.
+- Session tokens: `session.verify` (IDENTITY effect) — programs
+  verify, only hosts mint.
+

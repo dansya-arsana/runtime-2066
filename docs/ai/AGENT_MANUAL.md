@@ -34,6 +34,12 @@ programs on the first attempt. Machine-readable reference:
 - Failure is always a structured error with a stable code; `--json` gives
   you `{code, node, operation, expected, received, allowed_repairs}`.
 
+## Program headers (optional)
+
+`format-version 1` must match the runtime. `protocol 0.2` declares the
+protocol you target — incompatible runtimes refuse (E109) rather than
+misread. Omit both for portable V0 programs.
+
 ## Grammar
 
 ```text

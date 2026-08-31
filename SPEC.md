@@ -1,6 +1,10 @@
-# 2066 Specification — V0 (Milestone 1)
+# 2066 Specification — Protocol 0.2
 
-Status: Working draft for the interpreter foundation (master roadmap §10–§14).
+Status: normative. The whitepaper explains; this tree defines. Every
+behavior claim is testable against the conformance corpus
+(protocol/conformance) and the 394-test suite. A second, independent
+implementation (rust-canonicalizer) reproduces canonical identity for
+the entire corpus — the spec, not any codebase, is the source of truth.
 
 2066 programs are **semantic graphs**, not source code in a conventional
 language. The runtime parses, validates, and executes them directly; no
@@ -28,7 +32,15 @@ Normative modules:
 - [spec/instructions.md](spec/instructions.md) — the V0 instruction set and semantics
 - [spec/types.md](spec/types.md) — primitive types, literals, arithmetic rules
 - [spec/errors.md](spec/errors.md) — structured error protocol, exit codes, repair loop
-- [spec/identity.md](spec/identity.md) — agent identity, signed grants (Phase 7)
+- [spec/identity.md](spec/identity.md) — agent identity, signed grants
+- [spec/capabilities.md](spec/capabilities.md) — the capability model (actions, scopes, expiry, delegation)
+- [spec/effects.md](spec/effects.md) — effect classes and their authority
+- [spec/packages.md](spec/packages.md) — semantic packages: package::module::unit
+- [spec/canonicalization.md](spec/canonicalization.md) — canonical form + program identity
+- [spec/ir.md](spec/ir.md) — the semantic IR
+- [spec/proposals.md](spec/proposals.md) — signed proposals + deterministic merge
+- [spec/evidence.md](spec/evidence.md) — hash-chained evidence
+- [spec/hardware-key.md](spec/hardware-key.md) · [spec/key-copying.md](spec/key-copying.md) — human authority
 
 Design invariants for everything below:
 
@@ -40,9 +52,16 @@ Design invariants for everything below:
 4. **Every effect is explicit and capability-gated** (Phase 3–4, §17–§20):
    `python -m runtime effects <file>` states what authority a program needs
    before it runs; the runtime enforces grants and denies by default.
-5. **V0+ is pure by default.** Only capability-gated filesystem effects
-   exist today; the network, processes, and data layer arrive only behind
-   the same explicit model.
-6. **Engine independence** (roadmap §102, Appendix F.3): the canonical form
-   is the primary artifact; any number of execution adapters may consume it,
-   and equivalent results across adapters are enforced by tests.
+5. **Pure by default; effects are explicit.** Filesystem, data
+   (SQLite/memory adapters), and outbound network (`net.fetch`,
+   hostname-allowlisted) exist ONLY behind capability grants. Processes
+   and arbitrary shell are rejected permanently (ADR-003).
+6. **Engine independence** (Appendix F.3): two in-runtime adapters
+   (tree, plan VM) plus two storage adapters (SQLite, memory) are
+   proven equivalent by differential tests, and an independent Rust
+   implementation reproduces canonical hashes for the whole corpus
+   (tests/independent).
+
+7. **Protocol versioning.** `PROTOCOL_VERSION = 0.2` is separate from
+   runtime version; programs may declare `protocol 0.2` and incompatible
+   runtimes refuse (E109) rather than misread.

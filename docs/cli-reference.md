@@ -175,3 +175,55 @@ best-effort attempt counting) are in the spec.
 | 2 | runtime error (E3xx) |
 | 3 | usage, IO, or trust failure (bad capability file, bad signature) |
 | 4 | authority denial (E4xx) — the program ran, the policy said no |
+
+## list
+
+`python -m runtime list [package]` — semantic packages under
+`programs/`: modules, units, versions. The application surface,
+addressed semantically (spec/packages.md).
+
+## inspect
+
+`python -m runtime inspect <pkg::module::unit> [--json]` — the full
+semantic context card: hash, node count, stdin inputs, outputs,
+effects, required capabilities, dependencies. Everything an agent
+needs to modify a unit safely without browsing files.
+
+## context
+
+`python -m runtime context <pkg::module::unit>` — the same card,
+always machine-shaped (JSON). Alias for `inspect --json`.
+
+## sbom
+
+`python -m runtime sbom [--out file] [--now iso]` — SPDX 2.3 SBOM;
+deterministic under a fixed clock.
+
+## release / verify-release
+
+`python -m runtime release --out r.json --agent id --key k`
+hashes the runtime tree, spec, and conformance corpus into a signed
+release manifest. `verify-release r.json --agent id` proves the
+running tree matches it file-by-file and refuses other signers.
+
+## backup / restore
+
+`python -m runtime backup <dir> --db f [--programs d] [--policies d]`
+writes a hash-verified bundle (secret-bearing files excluded by
+default). `restore <dir> --to d` verifies EVERYTHING, then copies —
+any mismatch copies nothing.
+
+## bundle / verify-bundle / install-bundle
+
+Offline update flow: `bundle <dir>` packs programs + policies + SBOM +
+signed release; `verify-bundle <dir> --agent id` checks signature then
+every hash; `install-bundle <dir> --to root --agent id
+[--out evidence.jsonl]` installs and records what ran.
+
+## --profile development|production|sovereign
+
+Security posture flag (never an environment variable). Production and
+sovereign refuse unsigned grants unconditionally; sovereign documents
+the offline, no-telemetry deployment shape
+(docs/operations/DEPLOYMENT_PROFILES.md).
+

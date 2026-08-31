@@ -156,3 +156,25 @@ so a read-only agent cannot delete (§24).
 Errors: E401 denied (no grant) · E402 expired · E403 over limit ·
 E305/E505 IO/data errors. Exit code 4 for any denial.
 See the [Capabilities guide](capabilities-guide.md).
+
+---
+
+## Release & sovereign operations (H7)
+
+Detailed guides live in [operations/](operations/): deployment profiles
+(A/B/C), disaster recovery, and the audit/event model. The commands:
+
+```bash
+python -m runtime sbom --out sbom.json            # SPDX 2.3
+python -m runtime release --out release.json --agent id --key k.key
+python -m runtime verify-release release.json --agent id
+python -m runtime backup bundle/ --db app.db --programs programs --policies policies
+python -m runtime restore bundle/ --to restored/  # verify-everything first
+python -m runtime bundle out/ --programs programs --policies policies --out release.json
+python -m runtime install-bundle out/ --to repo-root --agent id --out evidence.jsonl
+```
+
+Wheels are byte-reproducible with pinned `SOURCE_DATE_EPOCH`
+(tools/release/REPRODUCIBILITY.md). Production and sovereign profiles
+refuse unsigned grants: `--profile production` / `--profile sovereign`.
+

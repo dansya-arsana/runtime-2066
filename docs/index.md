@@ -62,3 +62,25 @@ input 001
 No variables, no syntax sugar, no ambiguity — one canonical way to write
 each construct, validated before execution, compiled to Python or
 JavaScript when you want a conventional artifact.
+
+## Architecture & security (added in the hardening cycle)
+
+- [architecture/BOUNDARIES.md](architecture/BOUNDARIES.md) — layer map,
+  enforced dependency direction, change classification
+- [security/TCB.md](security/TCB.md) — the trusted computing base and
+  how to audit it
+- [decisions/](decisions/) — ADR-001..006 (why the rules exist)
+- [operations/DEPLOYMENT_PROFILES.md](operations/DEPLOYMENT_PROFILES.md)
+  · [DISASTER_RECOVERY.md](operations/DISASTER_RECOVERY.md)
+  · [AUDIT.md](operations/AUDIT.md)
+- Normative spec tree: [../spec/](../spec/) — grammar, types, ops,
+  errors, capabilities, effects, canonicalization, IR, packages,
+  proposals, evidence, identity, hardware keys
+- Conformance corpus: [../protocol/conformance/](../protocol/conformance/)
+  — every shipped program's canonical hash, frozen
+- Independent second implementation:
+  [../rust-canonicalizer/](../rust-canonicalizer/) — agrees with the
+  Python oracle on all 28 corpus hashes
+- Root policy docs: [../SECURITY.md](../SECURITY.md)
+  · [../CHANGELOG.md](../CHANGELOG.md) · [../DEPENDENCIES.md](../DEPENDENCIES.md)
+

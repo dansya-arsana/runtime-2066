@@ -52,3 +52,12 @@ Unsigned grant acceptance remains a transition default (`--require-signed`
 refuses it). Law 2 (scoped human authority) and hardware-backed issuance
 arrive with Phase 10; law 8's full verify-over-trust pipeline is the repair
 loop plus validator plus signature verification today.
+
+## Protocol versioning
+
+The protocol (semantics, canonical identity, error namespace,
+capability model) versions independently of any runtime. Programs may
+declare `protocol <x.y>`; incompatible runtimes must refuse them, never
+guess. Changing a canonical hash or an error code is a protocol event —
+deliberate, reviewed, migrated — never a refactor side effect.
+
