@@ -203,6 +203,22 @@ op emit
 input 004
 ```
 
+## Semantic packages & inspect
+
+Applications ship as packages under `programs/`: a `package.ai`
+manifest declares modules; a unit is one program addressed as
+`package::module::unit` (spec/packages.md). The address is identity —
+the filesystem is storage.
+
+```bash
+python -m runtime list                       # what exists
+python -m runtime inspect sales::business::add   # full context card
+```
+
+`inspect` returns hash, node count, stdin inputs, outputs, effects,
+required capabilities, and dependencies — everything needed to modify a
+unit safely without reading unrelated files. Prefer it over browsing.
+
 ## Authority — non-negotiable
 
 - Effects without `--caps` / `--db` are denied (E401). That is correct

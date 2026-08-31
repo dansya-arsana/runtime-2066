@@ -1063,3 +1063,83 @@ def _load_program(path, what):
     source = pathlib.Path(path).read_text(encoding="utf-8")
     program = parse_source(source)
     return program, analyze(program)
+
+
+def _list_packages(package_filter: str | None, json_mode: bool) -> int:
+    """2066 list [package] — semantic packages, modules, units (H3)."""
+    from runtime.packages import PackageStore, default_store_root
+    store = PackageStore(default_store_root())
+    packages = store.packages()
+    if not packages:
+        print("no semantic packages "
+              "(create programs/<name>/package.ai to add one)")
+        return 0
+    if package_filter is not None and package_filter not in packages:
+        print(f"error: unknown package {package_filter!r} "
+              f"(have: {', '.join(sorted(packages))})", file=sys.stderr)
+        return 3
+    selected = {package_filter: packages[package_filter]} if package_filter \
+        else packages
+    if json_mode:
+        print(json.dumps({"packages": {
+            name: {"version": p.version, "modules": p.modules}
+            for name, p in selected.items()}}, indent=1))
+        return 0
+    for name, package in selected.items():
+        units = sum(len(u) for u in package.modules.values())
+        print(f"{name} {package.version}  "
+              f"({len(package.modules)} modules, {units} units)")
+        for module, unit_names in package.modules.items():
+            print(f"  {module:<14} {' '.join(unit_names)}")
+    return 0
+
+
+def _inspect_unit(address: str, json_mode: bool) -> int:
+    """2066 inspect <package::module::unit> — the semantic context card
+    (hardening plan §16): everything an agent needs without browsing."""
+    from runtime.packages import PackageStore, default_store_root
+    store = PackageStore(default_store_root())
+    try:
+        unit = store.unit(address)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 3
+    deps = unit.dependencies()
+    effects = unit.effects
+    pure_only = effects == ["PURE"]
+    if json_mode:
+        print(json.dumps({
+            "unit": unit.address,
+            "hash": unit.hash,
+            "node_count": unit.node_count,
+            "inputs": {"stdin_lines": unit.input_count},
+            "outputs": {"emit": unit.emit_count,
+                        "stdout": unit.writes_stdout},
+            "effects": effects,
+            "capabilities": unit.capabilities(),
+            "dependencies": deps,
+            "callers": [],
+            "path": str(unit.path),
+        }, indent=1))
+        return 0
+    output = ("stdout: 1 system.write" if unit.writes_stdout else "none")
+    if unit.emit_count:
+        output += f", {unit.emit_count} emit value(s)"
+    authority = unit.capabilities() or ["none (pure computation)"]
+    print(f"UNIT         {unit.address}")
+    print(f"HASH         {unit.hash}")
+    print(f"NODES        {unit.node_count}")
+    print(f"INPUT        {unit.input_count} stdin line(s) (system.read order)")
+    print(f"OUTPUT       {output}")
+    print(f"EFFECTS      {' '.join(effects)}"
+          + ("  (no authority required)" if pure_only else ""))
+    print("CAPABILITIES " + " · ".join(authority))
+    entity_note = ", ".join(deps["entities"]) or "none"
+    host_note = ", ".join(deps["hosts"]) or "none"
+    session_note = "yes" if deps["session"] else "no"
+    print(f"DEPENDENCIES entities: {entity_note} · session verifier: "
+          f"{session_note} · egress hosts: {host_note}")
+    print("CALLERS      none — units are self-contained graphs "
+          "(protocol 0.2)")
+    print(f"PATH         {unit.path}")
+    return 0

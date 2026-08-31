@@ -75,6 +75,27 @@ capability-gated notes data plane (`2066_notes_register/login/add/get/
 list`) with signed, expiring, revocable sessions. Session-mint keys live
 in `~/.2066/mcp/` — never in site-packages.
 
+## Repository layout (hardening cycle H1)
+
+```text
+programs/    semantic packages — sales::business::add is identity
+apps/        application shells (HTTP server, cron, UI)
+policies/    capability grants by deployment stage
+protocol/    conformance corpus (frozen canonical hashes)
+runtime/     the implementation (core + execution + adapters)
+examples/    language examples and demos
+spec/        normative specification (incl. spec/packages.md)
+```
+
+Semantic addressing — agents work with units, not files:
+
+```bash
+python -m runtime list                       # packages, modules, units
+python -m runtime inspect sales::business::add
+# UNIT/HASH/NODES/INPUT/OUTPUT/EFFECTS/CAPABILITIES/DEPENDENCIES —
+# the full context card, no file browsing (hardening plan §16)
+```
+
 ## Quickstart
 
 ```bash

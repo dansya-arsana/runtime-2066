@@ -1,49 +1,45 @@
-# Security Policy
-
-2066 is a security-focused runtime: capability-gated authority, signed
-identities, deterministic verification. Reports about the layers below
-are genuinely valuable and will be taken seriously.
+# Security Policy — 2066
 
 ## Supported versions
 
-| Version | Supported |
-|---------|-----------|
-| 1.4.x   | yes       |
-| < 1.4   | no        |
+| version | status |
+|---|---|
+| 1.4.x (main) | supported |
+| ≤ 1.3 | prototype, unsupported |
 
 ## Reporting a vulnerability
 
-**Use GitHub's private vulnerability reporting** (Security tab → Report a
-vulnerability) on `dansya-arsana/runtime-2066`, so details stay out of
-public issues until a fix ships.
+Email the maintainer (see GitHub profile of `dansya-arsana`) with
+"2066-security" in the subject. Please include reproduction steps and,
+where possible, a failing test or malformed `.ai`/grant/proposal input.
 
-Please include: the affected component (parser / validator / interpreter /
-plan VM / capabilities / sessions / MCP server / example apps), a minimal
-reproducing `.ai` program or request, and the observed vs expected
-behavior. Structured denials (E4xx authority errors) are intended
-behavior — report them only if a denial is *bypassable*.
+- Acknowledgment: within 72 hours.
+- Disclosure: coordinated; we publish an advisory + patch after a fix
+  window (90 days default, shortened for actively exploited issues).
+- Safe harbor: good-faith research on your own deployments is welcome.
 
-You will get an acknowledgement within 7 days and a fix or mitigation
-timeline within 30. Coordinated disclosure: we ask for up to 90 days
-before public detail; credit is yours unless you prefer otherwise.
+## In scope
 
-## Scope
+The semantic core (`runtime/{parser,validator,serialize,hashing,types,
+errors,packages,ops,interpreter,plan_vm,capabilities}.py`), the
+capability/identity machinery (`runtime/{identity,session,revocation,
+multisig,delegation,keydisk,pinning}.py`), evidence chaining, and the
+CLI's handling of untrusted files.
 
-In scope: this repository (runtime, CLI, MCP server, example apps) and
-the live demo at `https://dev-2066.arsana.cloud`. Out of scope: the
-underlying hosting provider, social engineering, and denial of service
-by volume.
+## Out of scope (documented limits — THREAT_MODEL.md)
 
-## Design invariants worth attacking
+The HTTP app shells in `apps/` are reference demos, not hardened
+services; demo credentials in docs; the Python runtime itself is the
+reference oracle, not yet a memory-safe implementation (H8 tracks the
+independent core).
 
-If you can break any of these with a valid `.ai` program or a protocol
-message, that is a critical report:
+## Severity taxonomy
 
-1. **Default deny** — no effect (filesystem, data, session) executes
-   without a signed grant, ever.
-2. **Determinism** — two conforming runs (either adapter) of one program
-   hash and behave identically.
-3. **Session integrity** — session tokens are unforgeable and fail
-   closed; programs can verify but never mint them.
-4. **Proposal integrity** — signed proposals merge deterministically or
-   are rejected; no partial application.
+C1 authority escape (unsigned effect succeeds, capability bypass,
+hash/canonicalization collision) · C2 identity/evidence forgery ·
+C3 crash/DoS on malformed input · C4 information leak.
+
+## Signature keys
+
+Releases are not yet signed artifacts (H7). Until then, verify source
+via git history and `python -m runtime digest` (runtime self-hash, S9).

@@ -1,8 +1,10 @@
 # CLAUDE.md — 2066 Project Guide
 
-> **Last updated: 2026-08-31 — v1.4.x, 335 tests + 27 MCP checks green,
-> DEPLOYED LIVE on VPS (main, 43.129.49.56:8618, Docker, persistent
-> volumes). GitHub: dansya-arsana/runtime-2066.**
+> **Last updated: 2026-08-31 (night) — hardening cycle H0–H4 done:
+> semantic packages (`2066 list`/`inspect`), repo boundaries
+> (programs/apps/policies/protocol), production profile, frozen
+> conformance corpus. 353 tests green. Baseline tag:
+> prototype-v1.1-snapshot.**
 >
 > **Stages A-D COMPLETE + VPS battle-test pass done.** Found and fixed
 > live: MCP session tools were structurally dead (no verifier/mint

@@ -329,3 +329,23 @@ Genesis/wallets/robots/blockchain first").
 - [x] 338 tests green; deployed https://dev-2066sales.arsana.cloud
       (loopback :8628, TLS edge, volumes); OSM discovery fed 5 real
       Bandung cafes through the live pipeline.
+
+### H — High-assurance hardening cycle (plan §85–§89, 2026-08-31)
+
+- [x] H0 snapshot: tag `prototype-v1.1-snapshot`; 17 sales program
+      hashes recorded pre-move, byte-identical post-move (proof in
+      session log); conformance corpus frozen (28 programs)
+- [x] H1 repository cleanup: `programs/sales/*` semantic package,
+      `policies/deployment/` grants, `apps/sales/` shell; root stays
+      boring (BOUNDARIES.md)
+- [x] H2 architecture boundaries: layer map + import-analysis tests;
+      core verified free of storage/network/process imports; inward-only
+      dependency rule enforced by suite
+- [x] H3 semantic packages: manifests, `package::module::unit`,
+      `2066 list`, `2066 inspect` (context card per §16); spec/packages.md
+- [x] H4 production profile: `--profile production` ⇒ unsigned grants
+      always rejected (tested)
+- [x] Docs: SECURITY.md, CHANGELOG.md, DEPENDENCIES index (§25 fields)
+- [ ] H5 finish notes_app migration to a package (next cycle)
+- [ ] H6 property/fuzz expansion; H7 SBOM + signed releases; H8 Rust
+      core; H9 FIDO2 — sequenced per plan §91–§94

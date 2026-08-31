@@ -1,0 +1,12 @@
+# sales — the 2066 reference application (hardening plan §10, §19).
+# The filesystem is storage; sales::business::add is identity.
+package sales
+version 0.1.0
+
+module auth
+module business
+module activity
+module followup
+module opportunity
+module analytics
+module integration

@@ -15,10 +15,30 @@ import unittest
 from runtime import analyze, execute, identity, parse_source
 from runtime.capabilities import GrantSet
 from runtime.data import DataPlane
+from runtime.packages import PackageStore
 from runtime.session import SessionVerifier, mint_session_token
+from tests.helpers import ROOT
 
-APP = "examples/sales_app"
-GRANTS = GrantSet.from_file(f"{APP}/caps.json")
+# semantic addresses (H3): the app under test is the sales package
+STORE = PackageStore(ROOT / "programs")
+ENGINE = {"register": "sales::auth::register",
+          "login": "sales::auth::login",
+          "biz_add": "sales::business::add",
+          "biz_list": "sales::business::list",
+          "biz_ids": "sales::business::ids",
+          "opp_add": "sales::opportunity::add",
+          "opp_list": "sales::opportunity::list",
+          "opp_ids": "sales::opportunity::ids",
+          "opp_stage": "sales::opportunity::stage",
+          "act_add": "sales::activity::add",
+          "act_list": "sales::activity::list",
+          "fu_add": "sales::followup::add",
+          "fu_list": "sales::followup::list",
+          "fu_ids": "sales::followup::ids",
+          "fu_done": "sales::followup::done",
+          "funnel": "sales::analytics::funnel"}
+GRANTS = GrantSet.from_file(
+    str(ROOT / "policies" / "deployment" / "sales-caps.json"))
 
 
 class SalesAppTest(unittest.TestCase):
@@ -30,9 +50,8 @@ class SalesAppTest(unittest.TestCase):
         self.token = mint_session_token(self.secret, 1, ttl_minutes=30)
 
     def _run(self, engine, args):
-        program = parse_source(
-            open(f"{APP}/{engine}.ai", encoding="utf-8").read())
-        analysis = analyze(program)
+        unit = STORE.unit(ENGINE[engine])
+        program, analysis = unit.program, unit.analysis
         db = DataPlane(self.db_path, program.entities, GRANTS, None)
         old_in, old_out = sys.stdin, sys.stdout
         sys.stdin = io.StringIO("".join(a + "\n" for a in args))
@@ -50,8 +69,8 @@ class SalesAppTest(unittest.TestCase):
         return out
 
     def ids_of(self, engine):
-        program = parse_source(
-            open(f"{APP}/{engine}.ai", encoding="utf-8").read())
+        unit = STORE.unit(ENGINE[engine])
+        program, analysis = unit.program, unit.analysis
         db = DataPlane(self.db_path, program.entities, GRANTS, None)
         old_in = sys.stdin
         sys.stdin = io.StringIO(self.token + "\n")

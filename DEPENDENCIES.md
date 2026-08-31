@@ -65,3 +65,21 @@ Tracked from master roadmap Appendix A/B — study before build (Appendix G):
 - Foundgine — semantic data planning / provider model
 - AGF standards — governance vocabulary
 - FIDO2 security keys — human hardware approval
+
+---
+
+## Dependency index (hardening plan §25 fields)
+
+| name | version | license | purpose | security boundary | replacement | offline |
+|---|---|---|---|---|---|---|
+| CPython | 3.12+ (dev on 3.14.4) | PSF | host runtime | executes untrusted `.ai` behind grants | Rust port (H8) behind module boundaries | ✅ |
+| cryptography | 50.x | Apache-2.0 OR BSD-3-Clause | ed25519 identity/signatures | signing only, never authority | libsodium/PyNaCl via `runtime/identity.py` ABI | ✅ vendorable wheel |
+| sqlite3 (stdlib) | — | public domain | semantic data plane adapter | parameterized SQL only, identifiers grammar-checked | swap `runtime/data.py` (PostgreSQL etc.) | ✅ stdlib |
+| Node.js | 18+ (optional) | MIT | verifies JS export in tests | test-only; skipped when absent | — | optional |
+| Docker / docker-buildx | 24+ | Apache-2.0 | deployment images | build/host boundary only | any OCI runtime | ✅ local |
+| PyInstaller | 6.x | GPL-2.0 w/ bootloader exception | `bin/2066.exe` bridge binary | build-time only | Rust static binary (H8) | ✅ local |
+
+Rules: no dependency may become ambient authority; every runtime
+dependency must be vendorable or mirrorable for offline/sovereign
+profiles; adding a runtime dependency is an ADAPTER-class change
+(BOUNDARIES.md §change classification).

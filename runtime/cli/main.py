@@ -58,7 +58,8 @@ def _reference(json_mode: bool) -> int:
 
 from runtime.cli.commands import (  # noqa: F401
     _approve, _chain, _check, _delegate, _evidence, _export, _hash,
-    _key_format, _key_inspect, _key_rotate, _keygen, _merge, _migrate,
+    _inspect_unit, _key_format, _key_inspect, _key_rotate, _keygen,
+    _list_packages, _merge, _migrate,
     _propose, _redteam, _repair, _reputation, _revoke, _runtime_digest,
     _sign_caps, _verify_caps, _verify_proposal)
 from runtime.cli.usage import USAGE
@@ -97,6 +98,9 @@ USAGE = f"""usage:
   python -m runtime reputation <ledger.jsonl> [--agent <agent_id>] [--json]
   python -m runtime redteam <proposal.json> --base <base.ai>
                        [--reputation <ledger.jsonl>] [--json]
+  python -m runtime list [package]          # semantic packages (programs/)
+  python -m runtime inspect <pkg::module::unit>   # full semantic context card
+  python -m runtime run <p.ai> --profile production  # signed grants mandatory
   (or: bin/2066 run <program.ai>)"""
 
 def main(argv: list[str] | None = None) -> int:
@@ -110,14 +114,16 @@ def main(argv: list[str] | None = None) -> int:
      session_key_path, evidence_path, base_path, proposals_paths,
      force_flag, ttl_minutes, pin_value, revocations_path,
      for_hash, trust_store_path, reputation_path, args,
-     key_paths, multisig_spec, new_pin_value, subject_id) = parsed
-    ONE_ARG = ("keygen", "reference", "digest", "selftest")
+     key_paths, multisig_spec, new_pin_value, subject_id,
+     profile) = parsed
+    ONE_ARG = ("keygen", "reference", "digest", "selftest", "list")
     PATH_ONLY = ("evidence",)  # command + one path, no second argument
     TWO_ARG = ("run", "validate", "repair", "hash", "effects", "migrate",
                "propose", "sign-caps", "verify-caps", "approve", "keygen",
                "key-format", "key-inspect", "merge", "verify-proposal",
                "evidence", "export", "check", "reputation", "redteam",
-               "delegate", "chain", "key-rotate", "revoke")
+               "delegate", "chain", "key-rotate", "revoke",
+               "list", "inspect")
     if len(args) == 1 and args[0] in ONE_ARG:
         command, path = args[0], None
     elif len(args) == 2 and args[0] in TWO_ARG:
@@ -176,6 +182,10 @@ def main(argv: list[str] | None = None) -> int:
         return _redteam(path, base_path, reputation_path, json_mode)
     if command == "digest":
         return _runtime_digest(json_mode)
+    if command == "list":
+        return _list_packages(path, json_mode)
+    if command == "inspect":
+        return _inspect_unit(path, json_mode)
 
     try:
         source = pathlib.Path(path).read_text(encoding="utf-8")

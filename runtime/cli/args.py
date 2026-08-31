@@ -80,6 +80,7 @@ def _parse_args(argv: list[str]):
     multisig_spec: str | None = None     # "--multisig 2-of-3"
     new_pin_value: str | None = None     # key-rotate
     subject_id: str | None = None        # delegate
+    profile = "development"             # development | production
     positional: list[str] = []
     i = 0
     while i < len(argv):
@@ -98,7 +99,7 @@ def _parse_args(argv: list[str]):
                      "--proposals", "--ttl-minutes", "--pin",
                      "--revocations", "--for-hash", "--trust-store",
                      "--trust", "--force", "--reputation", "--multisig",
-                     "--new-pin", "--subject"):
+                     "--new-pin", "--subject", "--profile"):
             if not _take_value(argv, i):
                 return None
             value = argv[i + 1]
@@ -156,17 +157,25 @@ def _parse_args(argv: list[str]):
                 new_pin_value = value
             elif arg == "--subject":
                 subject_id = value
+            elif arg == "--profile":
+                if value not in ("development", "production"):
+                    return None
+                profile = value
         elif arg.startswith("-"):
             return None
         else:
             positional.append(arg)
         i += 1
     key_path = key_paths[-1] if key_paths else None  # last-wins (legacy)
+    # production profile (H4): unsigned grants are ALWAYS rejected —
+    # security must not depend on remembering --require-signed
+    if profile == "production":
+        require_signed = True
     return (json_mode, adapter, caps_path, now_raw, agent_path, key_path,
             out_path, require_signed, agent_id, target, library_flag, db_path,
             session_key_path, evidence_path, base_path, proposals_paths,
             force_flag, ttl_minutes, pin_value, revocations_path,
             for_hash, trust_store_path, reputation_path, positional,
-            key_paths, multisig_spec, new_pin_value, subject_id)
+            key_paths, multisig_spec, new_pin_value, subject_id, profile)
 def _take_value(argv: list[str], i: int) -> bool:
     return i + 1 < len(argv)

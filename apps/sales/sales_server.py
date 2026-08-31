@@ -39,7 +39,9 @@ from runtime.session import (SessionRegistry, SessionVerifier,  # noqa: E402
                              mint_session_token)
 
 DB = os.environ.get("2066_SALES_DB", str(APP_DIR / "sales.db"))
-CAPS = str(APP_DIR / "caps.json")
+# grants are POLICY, not app state (hardening plan §7): they live in
+# policies/deployment/ where a human signs them
+CAPS = str(ROOT / "policies" / "deployment" / "sales-caps.json")
 SERVER_IDENTITY = _KEY_HOME / "sales_server_identity.json"
 SERVER_KEY = _KEY_HOME / "sales_server_identity.key"
 REGISTRY_PATH = str(_KEY_HOME / "sales_session_registry.json")
@@ -81,16 +83,34 @@ SESSIONS = SessionVerifier(
 REGISTRY = SessionRegistry(REGISTRY_PATH)
 GRANTS = GrantSet.from_file(CAPS)
 
-# compile once: parse + validate every engine at startup
+# engines load through the SEMANTIC PACKAGE STORE (H3): filesystem
+# layout is storage; sales::business::add is identity
+from runtime.packages import PackageStore  # noqa: E402
+
+ENGINE_ADDRESS = {
+    "register": "sales::auth::register",
+    "login": "sales::auth::login",
+    "biz_add": "sales::business::add",
+    "biz_list": "sales::business::list",
+    "biz_ids": "sales::business::ids",
+    "opp_add": "sales::opportunity::add",
+    "opp_list": "sales::opportunity::list",
+    "opp_ids": "sales::opportunity::ids",
+    "opp_stage": "sales::opportunity::stage",
+    "act_add": "sales::activity::add",
+    "act_list": "sales::activity::list",
+    "fu_add": "sales::followup::add",
+    "fu_list": "sales::followup::list",
+    "fu_ids": "sales::followup::ids",
+    "fu_done": "sales::followup::done",
+    "funnel": "sales::analytics::funnel",
+    "api_health": "sales::integration::api_health",
+}
+STORE = PackageStore(ROOT / "programs")
 PROGRAMS = {}
-for name in ("register", "login", "biz_add", "biz_list", "biz_ids",
-             "opp_add", "opp_list", "opp_ids", "opp_stage",
-             "act_add", "act_list", "fu_add", "fu_list", "fu_ids", "fu_done",
-             "api_health",
-             "funnel"):
-    program = parse_source((APP_DIR / f"{name}.ai").read_text(
-        encoding="utf-8"))
-    PROGRAMS[name] = (program, analyze(program))
+for name, address in ENGINE_ADDRESS.items():
+    unit = STORE.unit(address)
+    PROGRAMS[name] = (unit.program, unit.analysis)
 
 
 def _mint(subject_id: int) -> str:
@@ -296,7 +316,7 @@ class Handler(BaseHTTPRequestHandler):
     def _discover(self, q: dict) -> dict:
         """OSM discovery: candidates are fed through the VERIFIED
         biz_add engine — rejected candidates leave zero rows."""
-        sys.path.insert(0, str(ROOT / "examples" / "sales_app"))
+        sys.path.insert(0, str(ROOT / "apps" / "sales"))
         import discover_osm
         token = q.get("token", "")
         added = rejected = 0
